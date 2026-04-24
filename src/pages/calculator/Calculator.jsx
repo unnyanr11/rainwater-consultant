@@ -227,7 +227,7 @@ export default function Calculator() {
           </section>
 
           {/* ── Calculator section ── */}
-          <section className="section">
+          <section className="section" style={{ paddingTop: 'var(--space-6)' }}>
             <div className="container">
               <div style={{
                 display:             'grid',

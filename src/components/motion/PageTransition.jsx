@@ -3,21 +3,21 @@ import { motion } from 'framer-motion'
 const variants = {
   initial: {
     opacity: 0,
-    clipPath: 'inset(0 0 100% 0)',
+    y: 18,              // ✅ slides up slightly — no layout impact
   },
   animate: {
     opacity: 1,
-    clipPath: 'inset(0 0 0% 0)',
+    y: 0,
     transition: {
-      duration: 0.65,
+      duration: 0.55,
       ease: [0.16, 1, 0.3, 1],
     },
   },
   exit: {
     opacity: 0,
-    clipPath: 'inset(100% 0 0 0)',
+    y: -12,
     transition: {
-      duration: 0.45,
+      duration: 0.35,
       ease: [0.7, 0, 0.84, 0],
     },
   },
