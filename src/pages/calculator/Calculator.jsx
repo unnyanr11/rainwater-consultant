@@ -2,8 +2,16 @@
  * Calculator.jsx
  * Rainwater harvesting calculator.
  * Rainfall data: Open-Meteo 10-year historical via useCityRainfallBreakdown
+ *
+ * Changes from original:
+ * - City selection replaced with CitySearchInput (search + detect location)
+ * - useRainfallData removed from city flow — CitySearchInput owns city selection
+ * - selectedCity is now direct object state, not derived from cities array
+ * - useEffect deps fixed (no missing dependency warnings)
+ * - reset() also clears selectedCity breakdown
+ * - Results subtitle shows city name from selectedCity object
  */
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CloudRain, Droplets, ArrowRight, RotateCcw, Loader2 } from 'lucide-react'
 
@@ -16,8 +24,8 @@ import LiquidMeter    from '../../components/motion/LiquidMeter'
 
 import RainfallTrendChart from '../../components/charts/RainfallTrendChart'
 import ScenarioPicker     from '../../components/charts/ScenarioPicker'
+import CitySearchInput    from './CitySearchInput'
 
-import { useRainfallData }          from '../../hooks/useRainfallData'
 import { useRoofTypes }             from '../../hooks/useRoofTypes'
 import { usePropertyTypes }         from '../../hooks/usePropertyTypes'
 import { useCityRainfallBreakdown } from '../../hooks/useCityRainfallBreakdown'
@@ -25,15 +33,15 @@ import { useCityRainfallBreakdown } from '../../hooks/useCityRainfallBreakdown'
 const CO2_PER_LITRE     = 0.0003
 const WATER_RATE_PER_KL = 45
 
-// ─── AnimatedNumber ───────────────────────────────────────────────────────────
+// ─── AnimatedNumber ────────────────────────────────────────────────────────────
 
 function AnimatedNumber({ value, unit = '' }) {
   const [display, setDisplay] = useState(0)
 
   useEffect(() => {
     if (!value) { setDisplay(0); return }
-    let start      = null
-    let rafId      = null
+    let start  = null
+    let rafId  = null
     const duration = 1200
     const step = (ts) => {
       if (!start) start = ts
@@ -50,7 +58,7 @@ function AnimatedNumber({ value, unit = '' }) {
   return <span>{display.toLocaleString('en-IN')}{unit}</span>
 }
 
-// ─── Shared styles ────────────────────────────────────────────────────────────
+// ─── Shared styles ─────────────────────────────────────────────────────────────
 
 const inputStyle = {
   width:        '100%',
@@ -76,7 +84,7 @@ const labelStyle = {
   marginBottom:  'var(--space-2)',
 }
 
-// ─── Skeleton ────────────────────────────────────────────────────────────────
+// ─── Skeleton ──────────────────────────────────────────────────────────────────
 
 function Skeleton({ height = 44, borderRadius = 'var(--radius-md)' }) {
   return (
@@ -90,15 +98,16 @@ function Skeleton({ height = 44, borderRadius = 'var(--radius-md)' }) {
   )
 }
 
-// ─── Calculator ───────────────────────────────────────────────────────────────
+// ─── Calculator ────────────────────────────────────────────────────────────────
 
 export default function Calculator() {
-  const { data: cities,        loading: loadingCities } = useRainfallData()
-  const { data: roofTypes,     loading: loadingRoofs  } = useRoofTypes()
-  const { data: propertyTypes, loading: loadingProps  } = usePropertyTypes()
+  // City is now owned as a direct object — not derived from a Supabase list
+  const [selectedCity, setSelectedCity] = useState(null)
+
+  const { data: roofTypes,     loading: loadingRoofs } = useRoofTypes()
+  const { data: propertyTypes, loading: loadingProps } = usePropertyTypes()
 
   const [form, setForm] = useState({
-    cityId:       '',
     roofArea:     '',
     roofTypeId:   '',
     propertyType: '',
@@ -109,38 +118,48 @@ export default function Calculator() {
   const [result,           setResult]           = useState(null)
   const [calculated,       setCalculated]       = useState(false)
 
-  const selectedCity = cities.find((c) => c.id === form.cityId) ?? null
-
-  // ✅ FIX: use cached_lat / cached_lon — matches Supabase column names
+  // Feed coordinates from whichever source provided selectedCity
+  // (Supabase cache, Open-Meteo search result, or detected location)
   const { breakdown, loading: loadingBreakdown } =
     useCityRainfallBreakdown(selectedCity?.cached_lat, selectedCity?.cached_lon)
 
-  const update = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+  const update = useCallback((k, v) => setForm((f) => ({ ...f, [k]: v })), [])
+
+  // ── Default roof/property type on first load ──────────────────────────────
+  useEffect(() => {
+    if (roofTypes.length && !form.roofTypeId) {
+      update('roofTypeId', roofTypes[0].id)
+    }
+  }, [roofTypes, form.roofTypeId, update])
 
   useEffect(() => {
-    if (cities.length && !form.cityId) update('cityId', cities[0].id)
-  }, [cities])
+    if (propertyTypes.length && !form.propertyType) {
+      update('propertyType', propertyTypes[0].name)
+    }
+  }, [propertyTypes, form.propertyType, update])
 
-  useEffect(() => {
-    if (roofTypes.length && !form.roofTypeId) update('roofTypeId', roofTypes[0].id)
-  }, [roofTypes])
-
-  useEffect(() => {
-    if (propertyTypes.length && !form.propertyType) update('propertyType', propertyTypes[0].name)
-  }, [propertyTypes])
-
+  // ── Reset results when city changes ──────────────────────────────────────
   useEffect(() => {
     setSelectedScenario('average')
     setResult(null)
     setCalculated(false)
-  }, [form.cityId])
+  }, [selectedCity?.id])
 
-  // ─── Calculate ──────────────────────────────────────────────────────────────
+  // ── City selection handler ────────────────────────────────────────────────
+  const handleCitySelect = useCallback((city) => {
+    setSelectedCity(city)
+    // If city carries a pre-cached avg, no need to wait for breakdown
+    // useCityRainfallBreakdown will fetch fresh data automatically
+  }, [])
 
-  const calculate = () => {
+  // ── Calculate ─────────────────────────────────────────────────────────────
+
+  const calculate = useCallback(() => {
+    if (!selectedCity) return
+
     const rainfall = breakdown
       ? breakdown.scenarios[selectedScenario].value
-      : (selectedCity?.cached_avg_mm ?? 800)  // ✅ FIX: cached_avg_mm
+      : (selectedCity?.cached_avg_mm ?? 800)
 
     const selectedRoof = roofTypes.find((r) => r.id === form.roofTypeId)
     const selectedProp = propertyTypes.find((p) => p.name === form.propertyType)
@@ -166,15 +185,24 @@ export default function Calculator() {
       rainfall, scenario: selectedScenario,
     })
     setCalculated(true)
-  }
+  }, [
+    selectedCity, breakdown, selectedScenario,
+    roofTypes, propertyTypes, form,
+  ])
 
-  const reset = () => { setResult(null); setCalculated(false) }
+  const reset = useCallback(() => {
+    setResult(null)
+    setCalculated(false)
+    setSelectedScenario('average')
+  }, [])
+
+  // ── Derived city display name ─────────────────────────────────────────────
+  const cityDisplayName = selectedCity?.city || selectedCity?.name || null
 
   // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
     <>
-      {/* ✅ FIX: style tag OUTSIDE PageTransition — was causing blank block space */}
       <style>{`
         @keyframes shimmer {
           0%   { background-position: -200% 0; }
@@ -257,29 +285,17 @@ export default function Calculator() {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
 
-                      {/* City */}
-                      <div>
-                        <label style={labelStyle}>City / Location</label>
-                        {loadingCities ? <Skeleton /> : (
-                          <select
-                            value={form.cityId}
-                            onChange={(e) => update('cityId', e.target.value)}
-                            style={inputStyle}
-                          >
-                            {cities.map((c) => (
-                              <option key={c.id} value={c.id}>
-                                {c.city}{c.state ? `, ${c.state}` : ''}
-                                {/* ✅ FIX: cached_avg_mm not annual_avg_mm */}
-                                {c.cached_avg_mm ? ` — ${c.cached_avg_mm}mm avg` : ''}
-                              </option>
-                            ))}
-                          </select>
-                        )}
-                      </div>
+                      {/* ── City — replaced static select with CitySearchInput ── */}
+                      <CitySearchInput
+                        onSelect={handleCitySelect}
+                        selectedCity={selectedCity}
+                        inputStyle={inputStyle}
+                        labelStyle={labelStyle}
+                      />
 
-                      {/* 10-year rainfall chart */}
+                      {/* ── 10-year rainfall chart ── */}
                       <AnimatePresence mode="wait">
-                        {loadingBreakdown && (
+                        {selectedCity && loadingBreakdown && (
                           <motion.div
                             key="loading"
                             initial={{ opacity: 0 }}
@@ -297,11 +313,11 @@ export default function Calculator() {
                             }}
                           >
                             <Loader2 size={14} style={{ animation: 'spin 0.8s linear infinite' }} />
-                            Fetching 10-year rainfall data for {selectedCity?.city}…
+                            Fetching 10-year rainfall data for {cityDisplayName}…
                           </motion.div>
                         )}
 
-                        {!loadingBreakdown && breakdown && (
+                        {selectedCity && !loadingBreakdown && breakdown && (
                           <motion.div
                             key="chart"
                             initial={{ opacity: 0, y: 10 }}
@@ -331,9 +347,30 @@ export default function Calculator() {
                             </div>
                           </motion.div>
                         )}
+
+                        {/* No city selected yet — prompt */}
+                        {!selectedCity && (
+                          <motion.div
+                            key="no-city"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            style={{
+                              padding:      'var(--space-5)',
+                              borderRadius: 'var(--radius-md)',
+                              background:   'var(--color-surface-offset)',
+                              border:       '1px dashed var(--color-border)',
+                              textAlign:    'center',
+                              fontSize:     'var(--text-sm)',
+                              color:        'var(--color-text-faint)',
+                            }}
+                          >
+                            Search a city or use current location to load rainfall data
+                          </motion.div>
+                        )}
                       </AnimatePresence>
 
-                      {/* Roof area */}
+                      {/* ── Roof area ── */}
                       <div>
                         <label style={labelStyle}>Rooftop / Catchment Area (sq.m)</label>
                         <input
@@ -346,7 +383,7 @@ export default function Calculator() {
                         />
                       </div>
 
-                      {/* Roof type */}
+                      {/* ── Roof type ── */}
                       <div>
                         <label style={labelStyle}>Roof Surface Type</label>
                         {loadingRoofs ? <Skeleton height={140} /> : (
@@ -393,7 +430,7 @@ export default function Calculator() {
                         )}
                       </div>
 
-                      {/* Property type */}
+                      {/* ── Property type ── */}
                       <div>
                         <label style={labelStyle}>Property Type</label>
                         {loadingProps ? <Skeleton /> : (
@@ -411,7 +448,7 @@ export default function Calculator() {
                         )}
                       </div>
 
-                      {/* Persons */}
+                      {/* ── Persons ── */}
                       <div>
                         <label style={labelStyle}>Number of Persons / Occupants</label>
                         <input
@@ -424,14 +461,24 @@ export default function Calculator() {
                         />
                       </div>
 
-                      {/* Buttons */}
+                      {/* ── Buttons ── */}
                       <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
                         <RippleButton
                           onClick={calculate}
                           icon={<ArrowRight size={15} />}
-                          disabled={!form.roofArea || !form.persons || loadingBreakdown}
+                          disabled={
+                            !selectedCity      ||
+                            !form.roofArea     ||
+                            !form.persons      ||
+                            loadingBreakdown
+                          }
                         >
-                          {loadingBreakdown ? 'Loading rainfall data…' : 'Calculate Now'}
+                          {!selectedCity
+                            ? 'Select a city first'
+                            : loadingBreakdown
+                              ? 'Loading rainfall data…'
+                              : 'Calculate Now'
+                          }
                         </RippleButton>
                         {calculated && (
                           <RippleButton variant="secondary" onClick={reset} icon={<RotateCcw size={15} />}>
@@ -476,7 +523,8 @@ export default function Calculator() {
                           </h2>
                           <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)' }}>
                             Based on {breakdown?.scenarios[result.scenario]?.label ?? result.scenario} scenario
-                            · {result.rainfall}mm/yr · {selectedCity?.city}
+                            · {result.rainfall}mm/yr
+                            {cityDisplayName && ` · ${cityDisplayName}`}
                           </p>
                         </div>
 

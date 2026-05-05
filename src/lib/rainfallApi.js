@@ -2,6 +2,15 @@
  * rainfallApi.js
  * Open-Meteo Geocoding + Historical Weather API utilities.
  * Zero API key required. Free forever.
+ *
+ * Exports:
+ *   searchCities(query)                        → autocomplete results
+ *   geocodeCity(cityName)                      → coordinates for a city name
+ *   fetchRainfallBreakdown(lat, lon)           → 10yr yearly breakdown + scenarios
+ *   getRainfallBreakdownForCity(cityName)      → geocode + breakdown combined
+ *   getRainfallForCity(cityName)               → single avg mm value (for cache)
+ *   getCurrentCoordinates()                    → browser geolocation Promise
+ *   reverseGeocodeCity(lat, lon)               → coordinates → city name
  */
 
 // ─── API base URLs ────────────────────────────────────────────────────────────
@@ -37,11 +46,15 @@ export async function searchCities(query) {
   return sorted.map((r) => ({
     id:          `${r.latitude},${r.longitude}`,
     name:        r.name,
-    state:       r.admin1 || null,
+    city:        r.name,
+    state:       r.admin1  || null,
     country:     r.country || null,
     countryCode: r.country_code,
     latitude:    r.latitude,
     longitude:   r.longitude,
+    // Aliases for useCityRainfallBreakdown compatibility
+    cached_lat:  r.latitude,
+    cached_lon:  r.longitude,
     displayLabel: r.admin1
       ? `${r.name}, ${r.admin1}${r.country_code !== 'IN' ? `, ${r.country}` : ''}`
       : `${r.name}${r.country_code !== 'IN' ? `, ${r.country}` : ''}`,
@@ -175,5 +188,81 @@ export async function getRainfallForCity(cityName) {
     years_averaged: 10,
     data_from:      new Date().getFullYear() - 10,
     data_to:        new Date().getFullYear() - 1,
+  }
+}
+
+// ─── getCurrentCoordinates ────────────────────────────────────────────────────
+/**
+ * Wraps navigator.geolocation in a Promise.
+ * Requires HTTPS + explicit user permission.
+ * Rejects with a user-readable message on denial or timeout.
+ */
+export function getCurrentCoordinates() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('Geolocation is not supported by your browser'))
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({
+        latitude:  pos.coords.latitude,
+        longitude: pos.coords.longitude,
+      }),
+      (err) => {
+        const messages = {
+          1: 'Location access denied. Please allow location permission and try again.',
+          2: 'Location unavailable. Check your device GPS or network.',
+          3: 'Location request timed out. Please try again.',
+        }
+        reject(new Error(messages[err.code] || 'Unable to detect location.'))
+      },
+      {
+        enableHighAccuracy: true,
+        timeout:            10000,
+        maximumAge:         300000,  // reuse GPS fix for up to 5 min
+      }
+    )
+  })
+}
+
+// ─── reverseGeocodeCity ───────────────────────────────────────────────────────
+/**
+ * lat/lon → city name + state + country.
+ * Uses BigDataCloud free reverse geocoding — no API key needed.
+ * Called by CitySearchInput after getCurrentCoordinates() resolves.
+ *
+ * Returned shape matches the city object expected by Calculator.jsx:
+ *   { city, name, state, country, countryCode,
+ *     latitude, longitude, cached_lat, cached_lon, displayLabel }
+ */
+export async function reverseGeocodeCity(latitude, longitude) {
+  const url = new URL('https://api.bigdatacloud.net/data/reverse-geocode-client')
+  url.searchParams.set('latitude',         latitude)
+  url.searchParams.set('longitude',        longitude)
+  url.searchParams.set('localityLanguage', 'en')
+
+  const res = await fetch(url.toString())
+  if (!res.ok) throw new Error('Reverse geocoding failed. Please search your city manually.')
+
+  const json = await res.json()
+
+  const city  = json.city || json.locality || ''
+  const state = json.principalSubdivision || ''
+
+  return {
+    city,
+    name:        city,
+    state,
+    country:     json.countryName || '',
+    countryCode: json.countryCode || '',
+    latitude,
+    longitude,
+    // Aliases required by useCityRainfallBreakdown
+    cached_lat:  latitude,
+    cached_lon:  longitude,
+    displayLabel: city
+      ? `${city}${state ? `, ${state}` : ''}`
+      : (json.locality || 'Current location'),
   }
 }
