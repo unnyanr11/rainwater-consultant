@@ -2,14 +2,6 @@
  * Calculator.jsx
  * Rainwater harvesting calculator.
  * Rainfall data: Open-Meteo 10-year historical via useCityRainfallBreakdown
- *
- * Changes from original:
- * - City selection replaced with CitySearchInput (search + detect location)
- * - useRainfallData removed from city flow — CitySearchInput owns city selection
- * - selectedCity is now direct object state, not derived from cities array
- * - useEffect deps fixed (no missing dependency warnings)
- * - reset() also clears selectedCity breakdown
- * - Results subtitle shows city name from selectedCity object
  */
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -30,8 +22,9 @@ import { useRoofTypes }             from '../../hooks/useRoofTypes'
 import { usePropertyTypes }         from '../../hooks/usePropertyTypes'
 import { useCityRainfallBreakdown } from '../../hooks/useCityRainfallBreakdown'
 
-const CO2_PER_LITRE     = 0.0003
-const WATER_RATE_PER_KL = 45
+const CO2_PER_LITRE      = 0.0003
+const WATER_RATE_PER_KL  = 45
+const DEMAND_PER_PERSON  = 135   // standard lpcd — no longer from DB
 
 // ─── AnimatedNumber ────────────────────────────────────────────────────────────
 
@@ -40,8 +33,8 @@ function AnimatedNumber({ value, unit = '' }) {
 
   useEffect(() => {
     if (!value) { setDisplay(0); return }
-    let start  = null
-    let rafId  = null
+    let start = null
+    let rafId = null
     const duration = 1200
     const step = (ts) => {
       if (!start) start = ts
@@ -98,10 +91,13 @@ function Skeleton({ height = 44, borderRadius = 'var(--radius-md)' }) {
   )
 }
 
+// ─── Category order for grouped dropdown ──────────────────────────────────────
+
+const CATEGORY_ORDER = ['Residential', 'Commercial', 'Industrial', 'Agricultural']
+
 // ─── Calculator ────────────────────────────────────────────────────────────────
 
 export default function Calculator() {
-  // City is now owned as a direct object — not derived from a Supabase list
   const [selectedCity, setSelectedCity] = useState(null)
 
   const { data: roofTypes,     loading: loadingRoofs } = useRoofTypes()
@@ -118,14 +114,12 @@ export default function Calculator() {
   const [result,           setResult]           = useState(null)
   const [calculated,       setCalculated]       = useState(false)
 
-  // Feed coordinates from whichever source provided selectedCity
-  // (Supabase cache, Open-Meteo search result, or detected location)
   const { breakdown, loading: loadingBreakdown } =
     useCityRainfallBreakdown(selectedCity?.cached_lat, selectedCity?.cached_lon)
 
   const update = useCallback((k, v) => setForm((f) => ({ ...f, [k]: v })), [])
 
-  // ── Default roof/property type on first load ──────────────────────────────
+  // ── Defaults on first load ────────────────────────────────────────────────
   useEffect(() => {
     if (roofTypes.length && !form.roofTypeId) {
       update('roofTypeId', roofTypes[0].id)
@@ -138,42 +132,35 @@ export default function Calculator() {
     }
   }, [propertyTypes, form.propertyType, update])
 
-  // ── Reset results when city changes ──────────────────────────────────────
+  // ── Reset on city change ──────────────────────────────────────────────────
   useEffect(() => {
     setSelectedScenario('average')
     setResult(null)
     setCalculated(false)
   }, [selectedCity?.id])
 
-  // ── City selection handler ────────────────────────────────────────────────
   const handleCitySelect = useCallback((city) => {
     setSelectedCity(city)
-    // If city carries a pre-cached avg, no need to wait for breakdown
-    // useCityRainfallBreakdown will fetch fresh data automatically
   }, [])
 
   // ── Calculate ─────────────────────────────────────────────────────────────
-
   const calculate = useCallback(() => {
     if (!selectedCity) return
 
-    const rainfall = breakdown
+    const rainfall    = breakdown
       ? breakdown.scenarios[selectedScenario].value
       : (selectedCity?.cached_avg_mm ?? 800)
 
     const selectedRoof = roofTypes.find((r) => r.id === form.roofTypeId)
-    const selectedProp = propertyTypes.find((p) => p.name === form.propertyType)
-
-    const coeff           = selectedRoof?.runoff_coefficient ?? 0.80
-    const area            = parseFloat(form.roofArea) || 0
-    const persons         = parseInt(form.persons, 10) || 1
-    const demandPerPerson = selectedProp?.daily_water_demand_lpcd ?? 135
+    const coeff        = selectedRoof?.runoff_coefficient ?? 0.80
+    const area         = parseFloat(form.roofArea) || 0
+    const persons      = parseInt(form.persons, 10) || 1
 
     if (area <= 0) return
 
     const annualHarvest   = Math.round(area * (rainfall / 1000) * coeff * 1000)
     const dailyAvg        = Math.round(annualHarvest / 365)
-    const dailyDemand     = persons * demandPerPerson
+    const dailyDemand     = persons * DEMAND_PER_PERSON
     const selfSufficiency = Math.min(100, Math.round((dailyAvg / dailyDemand) * 100))
     const tankSize        = Math.round(dailyAvg * 15)
     const annualSaving    = Math.round((annualHarvest / 1000) * WATER_RATE_PER_KL)
@@ -185,10 +172,7 @@ export default function Calculator() {
       rainfall, scenario: selectedScenario,
     })
     setCalculated(true)
-  }, [
-    selectedCity, breakdown, selectedScenario,
-    roofTypes, propertyTypes, form,
-  ])
+  }, [selectedCity, breakdown, selectedScenario, roofTypes, form])
 
   const reset = useCallback(() => {
     setResult(null)
@@ -196,7 +180,6 @@ export default function Calculator() {
     setSelectedScenario('average')
   }, [])
 
-  // ── Derived city display name ─────────────────────────────────────────────
   const cityDisplayName = selectedCity?.city || selectedCity?.name || null
 
   // ─── Render ────────────────────────────────────────────────────────────────
@@ -285,7 +268,7 @@ export default function Calculator() {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
 
-                      {/* ── City — replaced static select with CitySearchInput ── */}
+                      {/* ── City ── */}
                       <CitySearchInput
                         onSelect={handleCitySelect}
                         selectedCity={selectedCity}
@@ -348,7 +331,6 @@ export default function Calculator() {
                           </motion.div>
                         )}
 
-                        {/* No city selected yet — prompt */}
                         {!selectedCity && (
                           <motion.div
                             key="no-city"
@@ -430,7 +412,7 @@ export default function Calculator() {
                         )}
                       </div>
 
-                      {/* ── Property type ── */}
+                      {/* ── Property type — grouped by category ── */}
                       <div>
                         <label style={labelStyle}>Property Type</label>
                         {loadingProps ? <Skeleton /> : (
@@ -439,11 +421,19 @@ export default function Calculator() {
                             onChange={(e) => update('propertyType', e.target.value)}
                             style={inputStyle}
                           >
-                            {propertyTypes.map((p) => (
-                              <option key={p.id} value={p.name}>
-                                {p.name} — {p.daily_water_demand_lpcd}L/person/day
-                              </option>
-                            ))}
+                            {CATEGORY_ORDER.map((cat) => {
+                              const group = propertyTypes.filter((p) => p.category === cat)
+                              if (!group.length) return null
+                              return (
+                                <optgroup key={cat} label={cat}>
+                                  {group.map((p) => (
+                                    <option key={p.id} value={p.name}>
+                                      {p.name}
+                                    </option>
+                                  ))}
+                                </optgroup>
+                              )
+                            })}
                           </select>
                         )}
                       </div>
@@ -467,9 +457,9 @@ export default function Calculator() {
                           onClick={calculate}
                           icon={<ArrowRight size={15} />}
                           disabled={
-                            !selectedCity      ||
-                            !form.roofArea     ||
-                            !form.persons      ||
+                            !selectedCity  ||
+                            !form.roofArea ||
+                            !form.persons  ||
                             loadingBreakdown
                           }
                         >
