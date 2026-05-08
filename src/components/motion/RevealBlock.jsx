@@ -11,6 +11,17 @@ export default function RevealBlock({
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
+    const el = ref.current
+    if (!el) return
+
+    // If already in viewport on mount, reveal immediately (above-fold content)
+    const rect = el.getBoundingClientRect()
+    if (rect.top < window.innerHeight && rect.bottom > 0) {
+      setVisible(true)
+      return
+    }
+
+    // Otherwise, watch for scroll-into-view (below-fold content)
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -20,14 +31,14 @@ export default function RevealBlock({
       },
       { threshold: 0.01, rootMargin: '0px 0px -40px 0px' }
     )
-    if (ref.current) observer.observe(ref.current)
+    observer.observe(el)
     return () => observer.disconnect()
   }, [])
 
   const dirMap = {
-    up: { y: 24, x: 0 },
-    down: { y: -24, x: 0 },
-    left: { x: 32, y: 0 },
+    up:    { y: 24, x: 0 },
+    down:  { y: -24, x: 0 },
+    left:  { x: 32, y: 0 },
     right: { x: -32, y: 0 },
   }
   const from = dirMap[direction] || dirMap.up
