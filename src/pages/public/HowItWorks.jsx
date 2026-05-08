@@ -1,15 +1,13 @@
-import Navbar from '../../components/home/Navbar'
-import HowItWorks from '../../components/home/HowItWorks'
-import CalculatorCTA from '../../components/home/CalculatorCTA'
+import PageLayout from '../../components/common/PageLayout'
+import HowItWorksSection from '../../components/home/HowItWorks'
 
-export default function HowItWorksPage() {
+export default function HowItWorks() {
   return (
-    <>
-      <Navbar />
-      <div style={{ paddingTop: '64px' }}>
-        <HowItWorks />
-        <CalculatorCTA />
-      </div>
-    </>
+    <PageLayout
+      title="How It Works"
+      subtitle="A simple four-step process from assessment to a fully installed system"
+    >
+      <HowItWorksSection />
+    </PageLayout>
   )
 }

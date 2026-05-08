@@ -1,15 +1,13 @@
-import Navbar from '../../components/home/Navbar'
+import PageLayout from '../../components/common/PageLayout'
 import ServicesSection from '../../components/home/ServicesSection'
-import FinalCTA from '../../components/home/FinalCTA'
 
 export default function Services() {
   return (
-    <>
-      <Navbar />
-      <div style={{ paddingTop: '64px' }}>
-        <ServicesSection />
-        <FinalCTA />
-      </div>
-    </>
+    <PageLayout
+      title="Our Services"
+      subtitle="End-to-end rainwater harvesting solutions for every property type"
+    >
+      <ServicesSection />
+    </PageLayout>
   )
 }

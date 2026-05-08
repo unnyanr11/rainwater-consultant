@@ -3,7 +3,6 @@ import HeroSection         from '../../components/home/HeroSection'
 import StatsBar            from '../../components/home/StatsBar'
 import CalculatorCTA       from '../../components/home/CalculatorCTA'
 import TestimonialsSection from '../../components/home/TestimonialsSection'
-import FinalCTA            from '../../components/home/FinalCTA'
 
 // Global keyframes needed by HeroSection animations
 const globalStyles = `
@@ -29,9 +28,8 @@ export default function Home() {
       <div style={{ paddingTop: '64px' }}>
         <HeroSection />
         <StatsBar />
-        <CalculatorCTA />
         <TestimonialsSection />
-        <FinalCTA />
+        <CalculatorCTA />
       </div>
     </>
   )
