@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CloudRain, Droplets, ArrowRight, RotateCcw, Loader2 } from 'lucide-react'
 
@@ -16,9 +17,7 @@ import { useCityRainfallBreakdown } from '../../hooks/useCityRainfallBreakdown'
 
 const CO2_PER_LITRE     = 0.0003
 const WATER_RATE_PER_KL = 45
-const SQFT_TO_SQM       = 0.0929   // 1 sq.ft = 0.0929 m²
-// Textbook: Yield(L) = Area(m²) × Rainfall(mm)  [gross]
-//           Net Yield = Gross × runoff_coefficient
+const SQFT_TO_SQM       = 0.0929
 const CATEGORY_ORDER    = ['Residential', 'Commercial', 'Industrial', 'Agricultural']
 
 function AnimatedNumber({ value, unit = '' }) {
@@ -74,6 +73,7 @@ const labelStyle = {
 }
 
 export default function Calculator() {
+  const navigate = useNavigate()
   const [selectedCity, setSelectedCity] = useState(null)
   const { data: roofTypes,     loading: loadingRoofs } = useRoofTypes()
   const { data: propertyTypes, loading: loadingProps } = usePropertyTypes()
@@ -106,19 +106,13 @@ export default function Calculator() {
     const coeff        = selectedRoof?.runoff_coefficient ?? 0.80
     const rawArea      = parseFloat(form.roofArea) || 0
     if (rawArea <= 0) return
-
-    // Convert to sq.m if entered in sq.ft
-    const areaSqM = form.areaUnit === 'sqft' ? rawArea * SQFT_TO_SQM : rawArea
-
-    // Textbook formula: Gross Yield (L) = Area (m²) × Rainfall (mm)
-    // Net Yield = Gross × runoff_coefficient
-    const grossYield    = Math.round(areaSqM * rainfall)          // L/year
-    const annualHarvest = Math.round(grossYield * coeff)          // net L/year
+    const areaSqM       = form.areaUnit === 'sqft' ? rawArea * SQFT_TO_SQM : rawArea
+    const grossYield    = Math.round(areaSqM * rainfall)
+    const annualHarvest = Math.round(grossYield * coeff)
     const dailyAvg      = Math.round(annualHarvest / 365)
     const tankSize      = Math.round(dailyAvg * 15)
     const annualSaving  = Math.round((annualHarvest / 1000) * WATER_RATE_PER_KL)
     const co2Saved      = Math.round(annualHarvest * CO2_PER_LITRE)
-
     setResult({
       grossYield, annualHarvest, dailyAvg, tankSize,
       annualSaving, co2Saved, rainfall, coeff,
@@ -130,6 +124,16 @@ export default function Calculator() {
 
   const reset = useCallback(() => { setResult(null); setCalculated(false); setSelectedScenario('average') }, [])
   const cityDisplayName = selectedCity?.city || selectedCity?.name || null
+
+  const goToProfessionalDesign = useCallback(() => {
+    navigate('/get-professional-design', {
+      state: {
+        city:     cityDisplayName || '',
+        state:    selectedCity?.state || '',
+        roofArea: result?.areaSqM ? String(result.areaSqM) : form.roofArea,
+      },
+    })
+  }, [navigate, cityDisplayName, selectedCity, result, form.roofArea])
 
   return (
     <>
@@ -382,9 +386,29 @@ export default function Calculator() {
                         </span>
                       </motion.div>
 
-                      <RippleButton icon={<ArrowRight size={15} />} style={{ width:'100%' }}>
+                      {/* ── Professional Design CTA ── */}
+                      <button
+                        onClick={goToProfessionalDesign}
+                        style={{
+                          width: '100%',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                          padding: 'var(--space-4) var(--space-6)',
+                          borderRadius: 'var(--radius-md)',
+                          background: 'linear-gradient(135deg,#01696f 0%,#0f3638 100%)',
+                          color: '#fff',
+                          fontWeight: 700, fontSize: 'var(--text-sm)',
+                          border: 'none', cursor: 'pointer',
+                          boxShadow: '0 4px 14px oklch(from var(--color-primary) l c h / 0.35)',
+                          transition: 'opacity 180ms, transform 180ms',
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.opacity = '0.92'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+                        onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)' }}
+                      >
+                        <span style={{ fontSize: '1rem' }}>⭐</span>
                         Get Professional Design for This System
-                      </RippleButton>
+                        <ArrowRight size={15} />
+                      </button>
+                      <p style={{ fontSize:'var(--text-xs)', color:'var(--color-text-faint)', textAlign:'center', marginTop:'var(--space-2)' }}>Paid service · Expert engineers · Custom drawings</p>
 
                       <p style={{ fontSize:'var(--text-xs)', color:'var(--color-text-faint)', marginTop:'var(--space-3)', lineHeight:1.5 }}>
                         * Estimates based on Open-Meteo historical data ({breakdown?.dataRange}). Actual harvest depends on site conditions, first-flush losses, and seasonal variation.
