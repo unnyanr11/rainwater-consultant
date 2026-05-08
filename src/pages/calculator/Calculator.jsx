@@ -272,10 +272,6 @@ export default function Calculator() {
                     )}
                   </div>
 
-    
-
-        
-
                   <div style={{ display:'flex', gap:'var(--space-3)', flexWrap:'wrap' }}>
                     <RippleButton
                       onClick={calculate}
