@@ -10,6 +10,8 @@ export default function Navbar() {
     navigate('/')
   }
 
+  const role = user?.user_metadata?.role ?? user?.role ?? null
+
   return (
     <nav style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000,
@@ -44,10 +46,11 @@ export default function Navbar() {
       {/* ── Nav Links ── */}
       <div style={{ display: 'flex', gap: '2rem' }}>
         {[
-          { label: 'Services',     href: '/services'     },
-          { label: 'How It Works', href: '/how-it-works' },
-          { label: 'Pricing',      href: '/pricing'      },
-          { label: 'Calculator',   href: '/calculator'   },
+          { label: 'Home',        href: '/'            },
+          { label: 'Services',    href: '/services'    },
+          { label: 'How It Works',href: '/how-it-works'},
+          { label: 'Pricing',     href: '/pricing'     },
+          { label: 'Calculator',  href: '/calculator'  },
         ].map(({ label, href }) => (
           <Link key={label} to={href} style={{
             color: '#475569', fontWeight: 500,
@@ -67,7 +70,7 @@ export default function Navbar() {
         {user ? (
           <>
             <Link
-              to={user.role === 'admin' ? '/admin' : '/client'}
+              to={role === 'admin' ? '/admin' : '/client'}
               style={{
                 padding: '0.48rem 1.2rem', borderRadius: '9999px',
                 border: '1.5px solid #1e3a5f', color: '#1e3a5f',
