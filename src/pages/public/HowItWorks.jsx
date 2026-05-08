@@ -1,13 +1,12 @@
-import PageLayout from '../../components/common/PageLayout'
-import HowItWorksSection from '../../components/home/HowItWorks'
+import PageLayout from '../../components/layout/PageLayout'
+import HowItWorks from '../../components/home/HowItWorks'
+import CalculatorCTA from '../../components/home/CalculatorCTA'
 
-export default function HowItWorks() {
+export default function HowItWorksPage() {
   return (
-    <PageLayout
-      title="How It Works"
-      subtitle="A simple four-step process from assessment to a fully installed system"
-    >
-      <HowItWorksSection />
+    <PageLayout>
+      <HowItWorks />
+      <CalculatorCTA />
     </PageLayout>
   )
 }

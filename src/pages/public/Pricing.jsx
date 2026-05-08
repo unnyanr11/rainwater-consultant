@@ -1,13 +1,12 @@
-import PageLayout from '../../components/common/PageLayout'
+import PageLayout from '../../components/layout/PageLayout'
 import PricingSection from '../../components/home/PricingSection'
+import FinalCTA from '../../components/home/FinalCTA'
 
 export default function Pricing() {
   return (
-    <PageLayout
-      title="Pricing"
-      subtitle="Transparent, flexible plans — no hidden fees"
-    >
+    <PageLayout>
       <PricingSection />
+      <FinalCTA />
     </PageLayout>
   )
 }

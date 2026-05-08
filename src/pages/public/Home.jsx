@@ -1,10 +1,10 @@
-import Navbar from '../../components/home/Navbar'
+import PageLayout from '../../components/layout/PageLayout'
 import HeroSection         from '../../components/home/HeroSection'
 import StatsBar            from '../../components/home/StatsBar'
 import CalculatorCTA       from '../../components/home/CalculatorCTA'
 import TestimonialsSection from '../../components/home/TestimonialsSection'
+import FinalCTA            from '../../components/home/FinalCTA'
 
-// Global keyframes needed by HeroSection animations
 const globalStyles = `
   @keyframes rippleAnim {
     from { transform: scale(0); opacity: 1; }
@@ -24,13 +24,13 @@ export default function Home() {
   return (
     <>
       <style>{globalStyles}</style>
-      <Navbar />
-      <div style={{ paddingTop: '64px' }}>
+      <PageLayout>
         <HeroSection />
         <StatsBar />
-        <TestimonialsSection />
         <CalculatorCTA />
-      </div>
+        <TestimonialsSection />
+        <FinalCTA />
+      </PageLayout>
     </>
   )
 }
