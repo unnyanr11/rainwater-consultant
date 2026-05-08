@@ -8,31 +8,43 @@ export default function RevealBlock({
   className = '',
 }) {
   const ref = useRef(null)
+  // Start visible=true so above-fold content never flashes blank.
+  // Below-fold content is handled by IntersectionObserver.
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
     const el = ref.current
     if (!el) return
 
-    // If already in viewport on mount, reveal immediately (above-fold content)
-    const rect = el.getBoundingClientRect()
-    if (rect.top < window.innerHeight && rect.bottom > 0) {
-      setVisible(true)
-      return
+    const check = () => {
+      const rect = el.getBoundingClientRect()
+      if (rect.top < window.innerHeight && rect.bottom > 0) {
+        setVisible(true)
+        return true
+      }
+      return false
     }
 
-    // Otherwise, watch for scroll-into-view (below-fold content)
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true)
-          observer.disconnect()
-        }
-      },
-      { threshold: 0.01, rootMargin: '0px 0px -40px 0px' }
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
+    // Check immediately — works for above-fold content
+    if (check()) return
+
+    // Small rAF retry in case layout isn't settled yet (e.g. inside PageTransition)
+    const rafId = requestAnimationFrame(() => {
+      if (check()) return
+
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            setVisible(true)
+            observer.disconnect()
+          }
+        },
+        { threshold: 0.01, rootMargin: '0px 0px -40px 0px' }
+      )
+      observer.observe(el)
+    })
+
+    return () => cancelAnimationFrame(rafId)
   }, [])
 
   const dirMap = {

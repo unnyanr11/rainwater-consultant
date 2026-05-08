@@ -24,6 +24,8 @@ import { useCityRainfallBreakdown } from '../../hooks/useCityRainfallBreakdown'
 
 const CO2_PER_LITRE      = 0.0003
 const WATER_RATE_PER_KL  = 45
+// Height of the fixed PublicHeader — must match the header's height: 68px
+const HEADER_H = 68
 
 // ─── AnimatedNumber ────────────────────────────────────────────────────────────
 
@@ -197,9 +199,9 @@ export default function Calculator() {
         <div style={{ position: 'relative', overflow: 'hidden' }}>
           <RainOverlay count={16} opacity={0.3} />
 
-          {/* ── Hero: tight padding, no .section class ── */}
+          {/* ── Hero: top padding clears the fixed 68px header ── */}
           <section style={{
-            paddingTop:    'var(--space-8)',
+            paddingTop:    `calc(${HEADER_H}px + var(--space-8))`,
             paddingBottom: 'var(--space-6)',
             position:      'relative',
           }}>
@@ -233,8 +235,8 @@ export default function Calculator() {
             <WaveBackground height={100} />
           </section>
 
-          {/* ── Calculator form: override .section top padding ── */}
-          <section className="section" style={{ paddingTop: 'var(--space-6)' }}>
+          {/* ── Calculator form ── */}
+          <section style={{ paddingTop: 'var(--space-6)', paddingBottom: 'var(--space-16)' }}>
             <div className="container">
               <div style={{
                 display:             'grid',
@@ -480,7 +482,7 @@ export default function Calculator() {
                         padding:      'var(--space-8)',
                         boxShadow:    'var(--shadow-md)',
                         position:     'sticky',
-                        top:          80,
+                        top:          HEADER_H + 16,
                       }}>
 
                         <div style={{ marginBottom: 'var(--space-6)' }}>
