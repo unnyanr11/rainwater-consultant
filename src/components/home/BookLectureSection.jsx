@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import RevealBlock from '../ui/RevealBlock'
+import RevealBlock from '../motion/RevealBlock'
 
 const AUDIENCE = [
   'School / College',
@@ -144,7 +144,6 @@ export default function BookLectureSection() {
               padding: '1rem 1.1rem',
               background: 'var(--color-surface-offset)',
               borderRadius: 'var(--radius-lg)',
-              borderLeft: 'none',
               border: '1px solid var(--color-border)',
             }}>
               <p style={{
