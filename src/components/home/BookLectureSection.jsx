@@ -1,15 +1,6 @@
 import { useState } from 'react'
 import RevealBlock from '../ui/RevealBlock'
 
-const TOPICS = [
-  'Basics of Rainwater Harvesting',
-  'Rooftop Systems & Yield Calculation',
-  'Surface Run-off & Percolation',
-  'Water Conservation for Schools',
-  'Industrial & Commercial RWH',
-  'Custom / Other',
-]
-
 const AUDIENCE = [
   'School / College',
   'Corporate / Industry',
@@ -21,7 +12,7 @@ const AUDIENCE = [
 export default function BookLectureSection() {
   const [form, setForm] = useState({
     name: '', org: '', email: '', phone: '',
-    audience: '', topic: '', date: '', message: '',
+    audience: '', date: '', message: '',
   })
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -31,11 +22,7 @@ export default function BookLectureSection() {
   const handleSubmit = e => {
     e.preventDefault()
     setLoading(true)
-    // Simulate async submission — replace with real API call later
-    setTimeout(() => {
-      setLoading(false)
-      setSubmitted(true)
-    }, 1200)
+    setTimeout(() => { setLoading(false); setSubmitted(true) }, 1200)
   }
 
   const sectionStyle = {
@@ -74,6 +61,16 @@ export default function BookLectureSection() {
   }
 
   const fieldStyle = { marginBottom: '1.1rem' }
+
+  const noticeStyle = {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '0.6rem',
+    padding: '0.75rem 1rem',
+    background: 'var(--color-primary-highlight)',
+    borderRadius: 'var(--radius-md)',
+    marginBottom: '1.25rem',
+  }
 
   return (
     <section id="book-lecture" style={sectionStyle}>
@@ -128,7 +125,7 @@ export default function BookLectureSection() {
             </p>
 
             {/* Highlights */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.6rem' }}>
               {[
                 { icon: '🎓', text: 'Tailored for all audiences — beginner to expert' },
                 { icon: '📍', text: 'On-site or virtual delivery available' },
@@ -140,6 +137,32 @@ export default function BookLectureSection() {
                   <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', lineHeight: 1.5 }}>{text}</span>
                 </div>
               ))}
+            </div>
+
+            {/* Travel & Arrangements notice */}
+            <div style={{
+              padding: '1rem 1.1rem',
+              background: 'var(--color-surface-offset)',
+              borderRadius: 'var(--radius-lg)',
+              borderLeft: 'none',
+              border: '1px solid var(--color-border)',
+            }}>
+              <p style={{
+                fontSize: 'var(--text-xs)', fontWeight: 700, letterSpacing: '0.06em',
+                textTransform: 'uppercase', color: 'var(--color-text-muted)',
+                marginBottom: '0.6rem',
+              }}>Please note</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {[
+                  { icon: '✈️', text: 'Travel expenses to and from the venue are to be borne by the hosting organisation or individual.' },
+                  { icon: '🏛️', text: 'The host is responsible for arranging the venue, seating, projection equipment, and any other logistics required for the session.' },
+                ].map(({ icon, text }) => (
+                  <div key={icon} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.55rem' }}>
+                    <span style={{ fontSize: '1rem', marginTop: '0.05rem', flexShrink: 0 }}>{icon}</span>
+                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', lineHeight: 1.6 }}>{text}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </RevealBlock>
@@ -199,27 +222,17 @@ export default function BookLectureSection() {
                 </div>
               </div>
 
-              {/* Row: Audience + Topic */}
-              <div className="lecture-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 1rem' }}>
-                <div style={fieldStyle}>
-                  <label style={labelStyle} htmlFor="lec-audience">Audience Type *</label>
-                  <select id="lec-audience" name="audience" required className="lecture-input"
-                    value={form.audience} onChange={handleChange} style={inputStyle}>
-                    <option value="">Select…</option>
-                    {AUDIENCE.map(a => <option key={a} value={a}>{a}</option>)}
-                  </select>
-                </div>
-                <div style={fieldStyle}>
-                  <label style={labelStyle} htmlFor="lec-topic">Topic *</label>
-                  <select id="lec-topic" name="topic" required className="lecture-input"
-                    value={form.topic} onChange={handleChange} style={inputStyle}>
-                    <option value="">Select…</option>
-                    {TOPICS.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                </div>
+              {/* Audience — full width */}
+              <div style={fieldStyle}>
+                <label style={labelStyle} htmlFor="lec-audience">Audience Type *</label>
+                <select id="lec-audience" name="audience" required className="lecture-input"
+                  value={form.audience} onChange={handleChange} style={inputStyle}>
+                  <option value="">Select…</option>
+                  {AUDIENCE.map(a => <option key={a} value={a}>{a}</option>)}
+                </select>
               </div>
 
-              {/* Preferred date */}
+              {/* Preferred date — full width */}
               <div style={fieldStyle}>
                 <label style={labelStyle} htmlFor="lec-date">Preferred Date</label>
                 <input id="lec-date" name="date" type="date" className="lecture-input"
@@ -231,9 +244,17 @@ export default function BookLectureSection() {
               <div style={fieldStyle}>
                 <label style={labelStyle} htmlFor="lec-msg">Additional Notes</label>
                 <textarea id="lec-msg" name="message" rows={3} className="lecture-input"
-                  placeholder="Estimated audience size, any specific focus areas…"
+                  placeholder="Estimated audience size, specific focus areas, venue details…"
                   value={form.message} onChange={handleChange}
                   style={{ ...inputStyle, resize: 'vertical', minHeight: '80px' }} />
+              </div>
+
+              {/* Inline notice before submit */}
+              <div style={noticeStyle}>
+                <span style={{ fontSize: '1rem', flexShrink: 0, marginTop: '0.05rem' }}>ℹ️</span>
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', lineHeight: 1.6, margin: 0 }}>
+                  By submitting, you acknowledge that <strong>travel expenses</strong> and all <strong>venue arrangements</strong> (hall, seating, equipment) are the responsibility of the hosting organisation.
+                </p>
               </div>
 
               <button
