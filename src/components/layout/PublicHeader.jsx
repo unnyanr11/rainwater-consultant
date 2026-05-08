@@ -6,6 +6,7 @@ import ThemeToggle from '../ui/ThemeToggle'
 import RippleButton from '../motion/RippleButton'
 
 const NAV_LINKS = [
+  { label: 'Home', to: '/' },
   { label: 'Services', to: '/services' },
   { label: 'Pricing', to: '/pricing' },
   { label: 'Calculator', to: '/calculator' },
