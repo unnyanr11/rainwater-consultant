@@ -23,7 +23,7 @@ import { usePropertyTypes }         from '../../hooks/usePropertyTypes'
 import { useCityRainfallBreakdown } from '../../hooks/useCityRainfallBreakdown'
 
 const CO2_PER_LITRE      = 0.0003
-const WATER_RATE_PER_KL  = 45  // standard lpcd — no longer from DB
+const WATER_RATE_PER_KL  = 45
 
 // ─── AnimatedNumber ────────────────────────────────────────────────────────────
 
@@ -117,7 +117,6 @@ export default function Calculator() {
 
   const update = useCallback((k, v) => setForm((f) => ({ ...f, [k]: v })), [])
 
-  // ── Defaults on first load ────────────────────────────────────────────────
   useEffect(() => {
     if (roofTypes.length && !form.roofTypeId) {
       update('roofTypeId', roofTypes[0].id)
@@ -130,7 +129,6 @@ export default function Calculator() {
     }
   }, [propertyTypes, form.propertyType, update])
 
-  // ── Reset on city change ──────────────────────────────────────────────────
   useEffect(() => {
     setSelectedScenario('average')
     setResult(null)
@@ -141,33 +139,32 @@ export default function Calculator() {
     setSelectedCity(city)
   }, [])
 
-  // ── Calculate ─────────────────────────────────────────────────────────────
   const calculate = useCallback(() => {
-  if (!selectedCity) return
+    if (!selectedCity) return
 
-  const rainfall     = breakdown
-    ? breakdown.scenarios[selectedScenario].value
-    : (selectedCity?.cached_avg_mm ?? 800)
+    const rainfall     = breakdown
+      ? breakdown.scenarios[selectedScenario].value
+      : (selectedCity?.cached_avg_mm ?? 800)
 
-  const selectedRoof = roofTypes.find((r) => r.id === form.roofTypeId)
-  const coeff        = selectedRoof?.runoff_coefficient ?? 0.80
-  const area         = parseFloat(form.roofArea) || 0
+    const selectedRoof = roofTypes.find((r) => r.id === form.roofTypeId)
+    const coeff        = selectedRoof?.runoff_coefficient ?? 0.80
+    const area         = parseFloat(form.roofArea) || 0
 
-  if (area <= 0) return
+    if (area <= 0) return
 
-  const annualHarvest = Math.round(area * (rainfall / 1000) * coeff * 1000)
-  const dailyAvg      = Math.round(annualHarvest / 365)
-  const tankSize      = Math.round(dailyAvg * 15)
-  const annualSaving  = Math.round((annualHarvest / 1000) * WATER_RATE_PER_KL)
-  const co2Saved      = Math.round(annualHarvest * CO2_PER_LITRE)
+    const annualHarvest = Math.round(area * (rainfall / 1000) * coeff * 1000)
+    const dailyAvg      = Math.round(annualHarvest / 365)
+    const tankSize      = Math.round(dailyAvg * 15)
+    const annualSaving  = Math.round((annualHarvest / 1000) * WATER_RATE_PER_KL)
+    const co2Saved      = Math.round(annualHarvest * CO2_PER_LITRE)
 
-  setResult({
-    annualHarvest, dailyAvg,
-    tankSize, annualSaving, co2Saved,
-    rainfall, scenario: selectedScenario,
-  })
-  setCalculated(true)
-}, [selectedCity, breakdown, selectedScenario, roofTypes, form])
+    setResult({
+      annualHarvest, dailyAvg,
+      tankSize, annualSaving, co2Saved,
+      rainfall, scenario: selectedScenario,
+    })
+    setCalculated(true)
+  }, [selectedCity, breakdown, selectedScenario, roofTypes, form])
 
   const reset = useCallback(() => {
     setResult(null)
@@ -200,11 +197,15 @@ export default function Calculator() {
         <div style={{ position: 'relative', overflow: 'hidden' }}>
           <RainOverlay count={16} opacity={0.3} />
 
-          {/* ── Hero ── */}
-          <section style={{ paddingTop: 'var(--space-10)', paddingBottom: 'var(--space-8)', position: 'relative' }}>
+          {/* ── Hero: tight padding, no .section class ── */}
+          <section style={{
+            paddingTop:    'var(--space-8)',
+            paddingBottom: 'var(--space-6)',
+            position:      'relative',
+          }}>
             <div className="container">
               <RevealBlock>
-                <span className="eyebrow" style={{ marginBottom: 'var(--space-4)' }}>
+                <span className="eyebrow" style={{ marginBottom: 'var(--space-3)' }}>
                   <CloudRain size={13} /> Rainwater Calculator
                 </span>
               </RevealBlock>
@@ -216,7 +217,7 @@ export default function Calculator() {
                   letterSpacing: '-0.04em',
                   color:         'var(--color-text)',
                   maxWidth:      '18ch',
-                  marginBottom:  'var(--space-4)',
+                  marginBottom:  'var(--space-3)',
                   lineHeight:    1,
                 }}>
                   How much rain <span className="text-gradient">can you harvest?</span>
@@ -232,7 +233,7 @@ export default function Calculator() {
             <WaveBackground height={100} />
           </section>
 
-          {/* ── Calculator section ── */}
+          {/* ── Calculator form: override .section top padding ── */}
           <section className="section" style={{ paddingTop: 'var(--space-6)' }}>
             <div className="container">
               <div style={{
@@ -407,7 +408,7 @@ export default function Calculator() {
                         )}
                       </div>
 
-                      {/* ── Property type — grouped by category ── */}
+                      {/* ── Property type ── */}
                       <div>
                         <label style={labelStyle}>Property Type</label>
                         {loadingProps ? <Skeleton /> : (
@@ -432,7 +433,6 @@ export default function Calculator() {
                           </select>
                         )}
                       </div>
-                    
 
                       {/* ── Buttons ── */}
                       <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
@@ -508,14 +508,13 @@ export default function Calculator() {
                           marginBottom:   'var(--space-8)',
                           flexWrap:       'wrap',
                         }}>
-                          
-<LiquidMeter
-  value={Math.min(100, Math.round((result.annualHarvest / 500000) * 100))}
-  max={100}
-  label="Harvest Level"
-  color="#52b5e8"
-  size={112}
-/>
+                          <LiquidMeter
+                            value={Math.min(100, Math.round((result.annualHarvest / 500000) * 100))}
+                            max={100}
+                            label="Harvest Level"
+                            color="#52b5e8"
+                            size={112}
+                          />
                           <LiquidMeter
                             value={Math.min(100, Math.round((result.annualHarvest / 500000) * 100))}
                             max={100}
