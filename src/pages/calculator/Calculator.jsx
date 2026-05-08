@@ -12,13 +12,11 @@ import ScenarioPicker      from '../../components/charts/ScenarioPicker'
 import CitySearchInput     from './CitySearchInput'
 
 import { useRoofTypes }             from '../../hooks/useRoofTypes'
-import { usePropertyTypes }         from '../../hooks/usePropertyTypes'
 import { useCityRainfallBreakdown } from '../../hooks/useCityRainfallBreakdown'
 
 const CO2_PER_LITRE     = 0.0003
 const WATER_RATE_PER_KL = 45
 const SQFT_TO_SQM       = 0.0929
-const CATEGORY_ORDER    = ['Residential', 'Commercial', 'Industrial', 'Agricultural']
 
 function AnimatedNumber({ value, unit = '' }) {
   const [display, setDisplay] = useState(0)
@@ -76,8 +74,7 @@ export default function Calculator() {
   const navigate = useNavigate()
   const [selectedCity, setSelectedCity] = useState(null)
   const { data: roofTypes,     loading: loadingRoofs } = useRoofTypes()
-  const { data: propertyTypes, loading: loadingProps } = usePropertyTypes()
-  const [form,             setForm]         = useState({ roofArea: '', roofTypeId: '', propertyType: '', areaUnit: 'sqm' })
+  const [form,             setForm]         = useState({ roofArea: '', roofTypeId: '', areaUnit: 'sqm' })
   const [selectedScenario, setSelectedScenario] = useState('average')
   const [result,           setResult]       = useState(null)
   const [calculated,       setCalculated]   = useState(false)
@@ -91,9 +88,7 @@ export default function Calculator() {
     if (roofTypes.length && !form.roofTypeId) update('roofTypeId', roofTypes[0].id)
   }, [roofTypes, form.roofTypeId, update])
 
-  useEffect(() => {
-    if (propertyTypes.length && !form.propertyType) update('propertyType', propertyTypes[0].name)
-  }, [propertyTypes, form.propertyType, update])
+
 
   useEffect(() => {
     setSelectedScenario('average'); setResult(null); setCalculated(false)
@@ -277,26 +272,7 @@ export default function Calculator() {
                     )}
                   </div>
 
-                  <div>
-                    <label style={labelStyle}>Roof Surface Type</label>
-                    {loadingRoofs ? <Skeleton height={140} /> : (
-                      <div style={{ display:'flex', flexDirection:'column', gap:'var(--space-2)' }}>
-                        {roofTypes.map(rt => {
-                          const active = form.roofTypeId === rt.id
-                          return (
-                            <label key={rt.id} style={{ display:'flex', alignItems:'center', gap:'var(--space-3)', padding:'var(--space-3) var(--space-4)', borderRadius:'var(--radius-md)', border:`1.5px solid ${active ? 'var(--color-primary)' : 'var(--color-border)'}`, background: active ? 'var(--color-primary-highlight)' : 'var(--color-surface)', cursor:'pointer', transition:'all 180ms' }}>
-                              <input type="radio" name="roofType" checked={active} onChange={() => update('roofTypeId', rt.id)} style={{ accentColor:'var(--color-primary)' }} />
-                              <span style={{ fontSize:'var(--text-sm)', color:'var(--color-text)', flex:1 }}>
-                                {rt.label}
-                                <span style={{ color:'var(--color-text-faint)', fontSize:'var(--text-xs)', marginLeft:6 }}>({(rt.runoff_coefficient*100).toFixed(0)}% runoff efficiency)</span>
-                              </span>
-                              {rt.notes && <span style={{ fontSize:'var(--text-xs)', color:'var(--color-text-faint)' }}>{rt.notes}</span>}
-                            </label>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
+    
 
         
 
