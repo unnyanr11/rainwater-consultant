@@ -3,6 +3,9 @@ import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 
 import Home            from './pages/public/Home'
+import Services        from './pages/public/Services'
+import HowItWorksPage  from './pages/public/HowItWorks'
+import Pricing         from './pages/public/Pricing'
 import Calculator      from './pages/calculator/Calculator'
 import SignUp          from './pages/auth/SignUp'
 import Login           from './pages/auth/Login'
@@ -18,6 +21,9 @@ export default function App() {
         <Routes>
           {/* Public */}
           <Route path="/"                element={<Home />} />
+          <Route path="/services"        element={<Services />} />
+          <Route path="/how-it-works"    element={<HowItWorksPage />} />
+          <Route path="/pricing"         element={<Pricing />} />
           <Route path="/calculator"      element={<Calculator />} />
           <Route path="/signup"          element={<SignUp />} />
           <Route path="/login"           element={<Login />} />

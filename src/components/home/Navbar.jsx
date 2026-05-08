@@ -44,10 +44,10 @@ export default function Navbar() {
       {/* ── Nav Links ── */}
       <div style={{ display: 'flex', gap: '2rem' }}>
         {[
-          { label: 'Services',    href: '/#services'    },
-          { label: 'How It Works',href: '/#how-it-works'},
-          { label: 'Pricing',     href: '/#pricing'     },
-          { label: 'Calculator',  href: '/calculator'   },
+          { label: 'Services',     href: '/services'     },
+          { label: 'How It Works', href: '/how-it-works' },
+          { label: 'Pricing',      href: '/pricing'      },
+          { label: 'Calculator',   href: '/calculator'   },
         ].map(({ label, href }) => (
           <Link key={label} to={href} style={{
             color: '#475569', fontWeight: 500,
@@ -65,7 +65,6 @@ export default function Navbar() {
       {/* ── Auth Buttons ── */}
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
         {user ? (
-          // ── Logged in state ──
           <>
             <Link
               to={user.role === 'admin' ? '/admin' : '/client'}
@@ -87,7 +86,6 @@ export default function Navbar() {
             </button>
           </>
         ) : (
-          // ── Logged out state ──
           <>
             <Link to="/login" style={{
               padding: '0.48rem 1.3rem', borderRadius: '9999px',

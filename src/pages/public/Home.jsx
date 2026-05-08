@@ -1,12 +1,9 @@
 import Navbar from '../../components/home/Navbar'
-import HeroSection          from '../../components/home/HeroSection'
-import StatsBar             from '../../components/home/StatsBar'
-import ServicesSection      from '../../components/home/ServicesSection'
-import HowItWorks           from '../../components/home/HowItWorks'
-import CalculatorCTA        from '../../components/home/CalculatorCTA'
-import PricingSection       from '../../components/home/PricingSection'
-import TestimonialsSection  from '../../components/home/TestimonialsSection'
-import FinalCTA             from '../../components/home/FinalCTA'
+import HeroSection         from '../../components/home/HeroSection'
+import StatsBar            from '../../components/home/StatsBar'
+import CalculatorCTA       from '../../components/home/CalculatorCTA'
+import TestimonialsSection from '../../components/home/TestimonialsSection'
+import FinalCTA            from '../../components/home/FinalCTA'
 
 // Global keyframes needed by HeroSection animations
 const globalStyles = `
@@ -28,14 +25,11 @@ export default function Home() {
   return (
     <>
       <style>{globalStyles}</style>
-      <Navbar />                                      {/* ← add */}
-      <div style={{ paddingTop: '64px' }}>            {/* ← push hero down */}
+      <Navbar />
+      <div style={{ paddingTop: '64px' }}>
         <HeroSection />
         <StatsBar />
-        <ServicesSection />
-        <HowItWorks />
         <CalculatorCTA />
-        <PricingSection />
         <TestimonialsSection />
         <FinalCTA />
       </div>
