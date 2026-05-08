@@ -3,6 +3,7 @@ import HeroSection         from '../../components/home/HeroSection'
 import StatsBar            from '../../components/home/StatsBar'
 import CalculatorCTA       from '../../components/home/CalculatorCTA'
 import TestimonialsSection from '../../components/home/TestimonialsSection'
+import BookLectureSection  from '../../components/home/BookLectureSection'
 import FinalCTA            from '../../components/home/FinalCTA'
 
 const globalStyles = `
@@ -29,6 +30,7 @@ export default function Home() {
         <StatsBar />
         <CalculatorCTA />
         <TestimonialsSection />
+        <BookLectureSection />
         <FinalCTA />
       </PageLayout>
     </>
