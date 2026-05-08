@@ -8,6 +8,13 @@ import {
   Layers, Home, Factory, TreePine, ShoppingBag, Star
 } from 'lucide-react'
 
+// ─── Blue palette (replaces all teal/green hardcodes) ────────────
+const BLUE_DARK   = '#074a7e'   // --color-primary-active
+const BLUE_MID    = '#0b6fb8'   // --color-primary
+const BLUE_LIGHT  = '#52b5e8'   // light accent
+const BLUE_BG     = 'rgba(11,111,184,0.07)'
+const BLUE_BORDER = 'rgba(11,111,184,0.20)'
+
 // ─── constants ────────────────────────────────────────────────
 const SOIL_TYPES = [
   { id: 'sandy',      label: 'Sandy',        desc: 'High permeability, fast drainage',  icon: '🏜️' },
@@ -65,7 +72,7 @@ const labelStyle = {
 }
 
 // ─── selector card ─────────────────────────────────────────────
-function SelectCard({ selected, onClick, icon: Icon, iconEmoji, label, desc, accentColor }) {
+function SelectCard({ selected, onClick, icon: Icon, iconEmoji, label, desc }) {
   const isActive = selected
   return (
     <button
@@ -167,8 +174,8 @@ function FileDropzone({ files, onChange }) {
   const ext = (name) => name.split('.').pop()?.toUpperCase()
 
   const extColor = (name) => ({
-    PDF: '#e74c3c', PNG: '#3498db', JPG: '#27ae60', JPEG: '#27ae60',
-    DWG: '#e67e22', DXF: '#9b59b6',
+    PDF: '#e74c3c', PNG: '#0b6fb8', JPG: '#095d9c', JPEG: '#095d9c',
+    DWG: '#e67e22', DXF: '#52b5e8',
   })[ext(name)] || 'var(--color-text-muted)'
 
   return (
@@ -232,12 +239,12 @@ function PricingBadge() {
       display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
       padding: '0.4rem 0.9rem',
       borderRadius: 'var(--radius-full)',
-      background: 'linear-gradient(135deg, #01696f 0%, #0b3638 100%)',
+      background: `linear-gradient(135deg, ${BLUE_MID} 0%, ${BLUE_DARK} 100%)`,
       color: '#fff',
       fontSize: 'var(--text-xs)',
       fontWeight: 700,
       letterSpacing: '0.04em',
-      boxShadow: '0 2px 8px oklch(from var(--color-primary) l c h / 0.35)',
+      boxShadow: '0 2px 8px rgba(11,111,184,0.35)',
     }}>
       <Star size={11} fill="#ffd700" color="#ffd700" />
       Paid Service — Expert Review Included
@@ -257,12 +264,10 @@ export default function ProfessionalDesign() {
   const [files, setFiles]   = useState([])
 
   const [form, setForm] = useState({
-    // Step 0 — Location
     city:    prefill.city    || '',
     state:   prefill.state   || '',
     pincode: prefill.pincode || '',
     address: '',
-    // Step 1 — Site
     soilType:     '',
     weatherZone:  '',
     buildingType: '',
@@ -270,11 +275,9 @@ export default function ProfessionalDesign() {
     storeys:      '',
     occupants:    '',
     usage:        '',
-    // Step 2 — Blueprint (files handled separately)
     visitPreferred: false,
     visitDate: '',
     visitNote: '',
-    // Step 3 — Contact
     name:    '',
     email:   '',
     phone:   '',
@@ -283,11 +286,10 @@ export default function ProfessionalDesign() {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
-  // ── validation ────────────────────────────────────────────────
   const canProceed = [
     form.city.trim() && form.state.trim(),
     form.soilType && form.weatherZone && form.buildingType,
-    true, // blueprint optional
+    true,
     form.name.trim() && /^[^@]+@[^@]+\.[^@]+$/.test(form.email) && form.phone.trim(),
   ][step]
 
@@ -302,7 +304,6 @@ export default function ProfessionalDesign() {
     setDone(true)
   }
 
-  // ── shared field wrapper ───────────────────────────────────────
   const Field = ({ label, children, hint }) => (
     <div style={{ marginBottom: '1.1rem' }}>
       <label style={labelStyle}>{label}</label>
@@ -360,7 +361,7 @@ export default function ProfessionalDesign() {
   return (
     <>
       <style>{`
-        .pd-input:focus { border-color: var(--color-primary) !important; box-shadow: 0 0 0 3px oklch(from var(--color-primary) l c h / 0.14); }
+        .pd-input:focus { border-color: var(--color-primary) !important; box-shadow: 0 0 0 3px rgba(11,111,184,0.14); }
         .pd-input::placeholder { color: var(--color-text-faint); }
         .pd-next:hover:not(:disabled) { background: var(--color-primary-hover) !important; }
         .pd-next:disabled { opacity: 0.45; cursor: not-allowed; }
@@ -375,11 +376,10 @@ export default function ProfessionalDesign() {
       <div style={{ paddingTop: 64 }}>
         {/* ── Hero banner ── */}
         <div style={{
-          background: 'linear-gradient(135deg,#01696f 0%,#0f3638 100%)',
+          background: `linear-gradient(135deg, ${BLUE_MID} 0%, ${BLUE_DARK} 100%)`,
           padding: 'clamp(2.5rem,5vw,4rem) 1.5rem',
           position: 'relative', overflow: 'hidden',
         }}>
-          {/* subtle water ring decoration */}
           <div style={{
             position: 'absolute', top: '-60px', right: '-60px',
             width: 280, height: 280, borderRadius: '50%',
@@ -399,7 +399,7 @@ export default function ProfessionalDesign() {
               Get a Professional Rainwater<br />Harvesting Design
             </h1>
             <p style={{
-              fontSize: 'var(--text-base)', color: 'rgba(255,255,255,0.75)',
+              fontSize: 'var(--text-base)', color: 'rgba(255,255,255,0.80)',
               maxWidth: '52ch', lineHeight: 1.7,
             }}>
               Tell us about your site — soil, weather zone, building type, and more.
@@ -497,7 +497,6 @@ export default function ProfessionalDesign() {
                       </div>
                     </div>
 
-                    {/* Soil type */}
                     <div style={{ marginBottom: '1.5rem' }}>
                       <label style={{ ...labelStyle, marginBottom: '0.6rem' }}>Soil Type *</label>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(min(200px,100%),1fr))', gap: '0.5rem' }}>
@@ -508,7 +507,6 @@ export default function ProfessionalDesign() {
                       </div>
                     </div>
 
-                    {/* Weather zone */}
                     <div style={{ marginBottom: '1.5rem' }}>
                       <label style={{ ...labelStyle, marginBottom: '0.6rem' }}>Weather / Rainfall Zone *</label>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(min(200px,100%),1fr))', gap: '0.5rem' }}>
@@ -519,7 +517,6 @@ export default function ProfessionalDesign() {
                       </div>
                     </div>
 
-                    {/* Building type */}
                     <div style={{ marginBottom: '1rem' }}>
                       <label style={{ ...labelStyle, marginBottom: '0.6rem' }}>Building Type *</label>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(min(200px,100%),1fr))', gap: '0.5rem' }}>
@@ -530,7 +527,6 @@ export default function ProfessionalDesign() {
                       </div>
                     </div>
 
-                    {/* Extra numeric fields */}
                     <div className="pd-grid2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 1rem', marginTop: '1.25rem' }}>
                       <Field label="Storeys">
                         <input className="pd-input" style={inputStyle} type="number" min={1} placeholder="e.g. 2" value={form.storeys} onChange={e => set('storeys', e.target.value)} />
@@ -558,20 +554,17 @@ export default function ProfessionalDesign() {
                       </div>
                     </div>
 
-                    {/* File upload */}
                     <div style={{ marginBottom: '1.5rem' }}>
                       <label style={{ ...labelStyle, marginBottom: '0.5rem' }}>Upload Map / Blueprint / Site Plan <span style={{ color: 'var(--color-text-faint)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional)</span></label>
                       <FileDropzone files={files} onChange={setFiles} />
                     </div>
 
-                    {/* Divider */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '1.5rem 0' }}>
                       <div style={{ flex: 1, height: 1, background: 'var(--color-border)' }} />
                       <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>or</span>
                       <div style={{ flex: 1, height: 1, background: 'var(--color-border)' }} />
                     </div>
 
-                    {/* Site visit toggle */}
                     <div style={{
                       padding: '1.1rem 1.2rem',
                       borderRadius: 'var(--radius-lg)',
@@ -612,13 +605,12 @@ export default function ProfessionalDesign() {
                       </motion.div>
                     )}
 
-                    {/* Notice */}
                     <div style={{
                       display: 'flex', alignItems: 'flex-start', gap: '0.5rem',
                       padding: '0.75rem 1rem', marginTop: '1rem',
-                      background: 'rgba(1,105,111,0.06)',
+                      background: BLUE_BG,
                       borderRadius: 'var(--radius-md)',
-                      border: '1px solid rgba(1,105,111,0.15)',
+                      border: `1px solid ${BLUE_BORDER}`,
                     }}>
                       <span style={{ flexShrink: 0, fontSize: '0.95rem', marginTop: 1 }}>ℹ️</span>
                       <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', lineHeight: 1.6, margin: 0 }}>
@@ -660,7 +652,6 @@ export default function ProfessionalDesign() {
                         value={form.message} onChange={e => set('message', e.target.value)} />
                     </Field>
 
-                    {/* Summary card */}
                     <div style={{
                       padding: '1rem 1.2rem', borderRadius: 'var(--radius-lg)',
                       background: 'var(--color-surface-offset)', border: '1px solid var(--color-border)',
@@ -684,13 +675,12 @@ export default function ProfessionalDesign() {
                       </div>
                     </div>
 
-                    {/* Pricing note */}
                     <div style={{
                       display: 'flex', alignItems: 'flex-start', gap: '0.6rem',
                       padding: '0.85rem 1rem', marginTop: '1rem',
                       borderRadius: 'var(--radius-md)',
-                      background: 'linear-gradient(135deg,rgba(1,105,111,0.07) 0%,rgba(1,105,111,0.03) 100%)',
-                      border: '1px solid rgba(1,105,111,0.2)',
+                      background: BLUE_BG,
+                      border: `1px solid ${BLUE_BORDER}`,
                     }}>
                       <Star size={14} fill="#ffd700" color="#ffd700" style={{ flexShrink: 0, marginTop: 1 }} />
                       <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', lineHeight: 1.6, margin: 0 }}>
@@ -766,7 +756,6 @@ export default function ProfessionalDesign() {
             )}
           </div>
 
-          {/* Step hint */}
           <p style={{ textAlign: 'center', fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)', marginTop: '0.75rem' }}>
             Step {step + 1} of {STEPS.length}
             {step < 2 && ' — All fields marked * are required to continue'}

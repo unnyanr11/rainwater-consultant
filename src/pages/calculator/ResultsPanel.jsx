@@ -1,11 +1,6 @@
 /**
  * ResultsPanel
  * Displays calculation results: liquid meters, stat grid, CO2 strip, CTA.
- *
- * Props:
- *   result       – result object from calculate()
- *   breakdown    – breakdown object from useCityRainfallBreakdown
- *   selectedCity – city object
  */
 import { motion } from 'framer-motion'
 import { Droplets, ArrowRight } from 'lucide-react'
@@ -33,7 +28,7 @@ function AnimatedNumber({ value, unit = '' }) {
 const STATS = (r) => [
   { label: 'Annual Harvest',     value: r.annualHarvest, unit: ' L',     color: '#0b6fb8' },
   { label: 'Daily Average',      value: r.dailyAvg,      unit: ' L/day', color: '#52b5e8' },
-  { label: 'Recommended Tank',   value: r.tankSize,      unit: ' L',     color: '#11a36a' },
+  { label: 'Recommended Tank',   value: r.tankSize,      unit: ' L',     color: '#095d9c' },
   { label: 'Est. Annual Saving', value: r.annualSaving,  unit: ' ₹',     color: '#d98c11' },
 ]
 
@@ -120,7 +115,7 @@ export default function ResultsPanel({ result, breakdown, selectedCity }) {
         ))}
       </div>
 
-      {/* CO2 strip */}
+      {/* CO2 strip — blue instead of green */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -131,15 +126,15 @@ export default function ResultsPanel({ result, breakdown, selectedCity }) {
           gap:          8,
           padding:      'var(--space-4)',
           borderRadius: 'var(--radius-lg)',
-          background:   'rgba(17,163,106,0.07)',
-          border:       '1px solid rgba(17,163,106,0.18)',
+          background:   'rgba(11,111,184,0.07)',
+          border:       '1px solid rgba(11,111,184,0.18)',
           marginBottom: 'var(--space-6)',
         }}
       >
-        <Droplets size={16} style={{ color: '#11a36a', flexShrink: 0 }} />
+        <Droplets size={16} style={{ color: '#0b6fb8', flexShrink: 0 }} />
         <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
           Saves approximately{' '}
-          <strong style={{ color: '#11a36a' }}>{result.co2Saved} kg CO₂</strong>
+          <strong style={{ color: '#0b6fb8' }}>{result.co2Saved} kg CO₂</strong>
           {' '}equivalent per year
         </span>
       </motion.div>
