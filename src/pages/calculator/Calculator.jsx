@@ -298,22 +298,7 @@ export default function Calculator() {
                     )}
                   </div>
 
-                  <div>
-                    <label style={labelStyle}>Property Type</label>
-                    {loadingProps ? <Skeleton /> : (
-                      <select value={form.propertyType} onChange={e => update('propertyType', e.target.value)} style={inputStyle}>
-                        {CATEGORY_ORDER.map(cat => {
-                          const group = propertyTypes.filter(p => p.category === cat)
-                          if (!group.length) return null
-                          return (
-                            <optgroup key={cat} label={cat}>
-                              {group.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
-                            </optgroup>
-                          )
-                        })}
-                      </select>
-                    )}
-                  </div>
+        
 
                   <div style={{ display:'flex', gap:'var(--space-3)', flexWrap:'wrap' }}>
                     <RippleButton
