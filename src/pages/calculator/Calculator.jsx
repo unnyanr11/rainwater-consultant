@@ -23,8 +23,7 @@ import { usePropertyTypes }         from '../../hooks/usePropertyTypes'
 import { useCityRainfallBreakdown } from '../../hooks/useCityRainfallBreakdown'
 
 const CO2_PER_LITRE      = 0.0003
-const WATER_RATE_PER_KL  = 45
-const DEMAND_PER_PERSON  = 135   // standard lpcd — no longer from DB
+const WATER_RATE_PER_KL  = 45  // standard lpcd — no longer from DB
 
 // ─── AnimatedNumber ────────────────────────────────────────────────────────────
 
@@ -106,8 +105,7 @@ export default function Calculator() {
   const [form, setForm] = useState({
     roofArea:     '',
     roofTypeId:   '',
-    propertyType: '',
-    persons:      '',
+    propertyType: ''
   })
 
   const [selectedScenario, setSelectedScenario] = useState('average')
@@ -145,34 +143,31 @@ export default function Calculator() {
 
   // ── Calculate ─────────────────────────────────────────────────────────────
   const calculate = useCallback(() => {
-    if (!selectedCity) return
+  if (!selectedCity) return
 
-    const rainfall    = breakdown
-      ? breakdown.scenarios[selectedScenario].value
-      : (selectedCity?.cached_avg_mm ?? 800)
+  const rainfall     = breakdown
+    ? breakdown.scenarios[selectedScenario].value
+    : (selectedCity?.cached_avg_mm ?? 800)
 
-    const selectedRoof = roofTypes.find((r) => r.id === form.roofTypeId)
-    const coeff        = selectedRoof?.runoff_coefficient ?? 0.80
-    const area         = parseFloat(form.roofArea) || 0
-    const persons      = parseInt(form.persons, 10) || 1
+  const selectedRoof = roofTypes.find((r) => r.id === form.roofTypeId)
+  const coeff        = selectedRoof?.runoff_coefficient ?? 0.80
+  const area         = parseFloat(form.roofArea) || 0
 
-    if (area <= 0) return
+  if (area <= 0) return
 
-    const annualHarvest   = Math.round(area * (rainfall / 1000) * coeff * 1000)
-    const dailyAvg        = Math.round(annualHarvest / 365)
-    const dailyDemand     = persons * DEMAND_PER_PERSON
-    const selfSufficiency = Math.min(100, Math.round((dailyAvg / dailyDemand) * 100))
-    const tankSize        = Math.round(dailyAvg * 15)
-    const annualSaving    = Math.round((annualHarvest / 1000) * WATER_RATE_PER_KL)
-    const co2Saved        = Math.round(annualHarvest * CO2_PER_LITRE)
+  const annualHarvest = Math.round(area * (rainfall / 1000) * coeff * 1000)
+  const dailyAvg      = Math.round(annualHarvest / 365)
+  const tankSize      = Math.round(dailyAvg * 15)
+  const annualSaving  = Math.round((annualHarvest / 1000) * WATER_RATE_PER_KL)
+  const co2Saved      = Math.round(annualHarvest * CO2_PER_LITRE)
 
-    setResult({
-      annualHarvest, dailyAvg, selfSufficiency,
-      tankSize, annualSaving, co2Saved,
-      rainfall, scenario: selectedScenario,
-    })
-    setCalculated(true)
-  }, [selectedCity, breakdown, selectedScenario, roofTypes, form])
+  setResult({
+    annualHarvest, dailyAvg,
+    tankSize, annualSaving, co2Saved,
+    rainfall, scenario: selectedScenario,
+  })
+  setCalculated(true)
+}, [selectedCity, breakdown, selectedScenario, roofTypes, form])
 
   const reset = useCallback(() => {
     setResult(null)
@@ -437,19 +432,7 @@ export default function Calculator() {
                           </select>
                         )}
                       </div>
-
-                      {/* ── Persons ── */}
-                      <div>
-                        <label style={labelStyle}>Number of Persons / Occupants</label>
-                        <input
-                          type="number"
-                          value={form.persons}
-                          onChange={(e) => update('persons', e.target.value)}
-                          placeholder="e.g. 4"
-                          style={inputStyle}
-                          min={1}
-                        />
-                      </div>
+                    
 
                       {/* ── Buttons ── */}
                       <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
@@ -459,7 +442,6 @@ export default function Calculator() {
                           disabled={
                             !selectedCity  ||
                             !form.roofArea ||
-                            !form.persons  ||
                             loadingBreakdown
                           }
                         >
@@ -526,13 +508,14 @@ export default function Calculator() {
                           marginBottom:   'var(--space-8)',
                           flexWrap:       'wrap',
                         }}>
-                          <LiquidMeter
-                            value={result.selfSufficiency}
-                            max={100}
-                            label="Self Sufficiency"
-                            color="#0b6fb8"
-                            size={96}
-                          />
+                          
+<LiquidMeter
+  value={Math.min(100, Math.round((result.annualHarvest / 500000) * 100))}
+  max={100}
+  label="Harvest Level"
+  color="#52b5e8"
+  size={112}
+/>
                           <LiquidMeter
                             value={Math.min(100, Math.round((result.annualHarvest / 500000) * 100))}
                             max={100}
