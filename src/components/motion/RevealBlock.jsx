@@ -18,17 +18,17 @@ export default function RevealBlock({
           observer.disconnect()
         }
       },
-      { threshold: 0.12 }
+      { threshold: 0.01, rootMargin: '0px 0px -40px 0px' }
     )
     if (ref.current) observer.observe(ref.current)
     return () => observer.disconnect()
   }, [])
 
   const dirMap = {
-    up: { y: 36, x: 0 },
-    down: { y: -36, x: 0 },
-    left: { x: 40, y: 0 },
-    right: { x: -40, y: 0 },
+    up: { y: 24, x: 0 },
+    down: { y: -24, x: 0 },
+    left: { x: 32, y: 0 },
+    right: { x: -32, y: 0 },
   }
   const from = dirMap[direction] || dirMap.up
 
@@ -39,7 +39,7 @@ export default function RevealBlock({
       initial={{ opacity: 0, ...from }}
       animate={visible ? { opacity: 1, x: 0, y: 0 } : {}}
       transition={{
-        duration: 0.7,
+        duration: 0.6,
         delay,
         ease: [0.16, 1, 0.3, 1],
       }}

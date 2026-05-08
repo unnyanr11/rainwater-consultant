@@ -201,7 +201,7 @@ export default function Calculator() {
           <RainOverlay count={16} opacity={0.3} />
 
           {/* ── Hero ── */}
-          <section style={{ paddingTop: 'var(--space-4)', paddingBottom: 'var(--space-16)', position: 'relative' }}>
+          <section style={{ paddingTop: 'var(--space-10)', paddingBottom: 'var(--space-8)', position: 'relative' }}>
             <div className="container">
               <RevealBlock>
                 <span className="eyebrow" style={{ marginBottom: 'var(--space-4)' }}>
