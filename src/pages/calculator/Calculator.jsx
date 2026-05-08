@@ -132,8 +132,8 @@ export default function Calculator() {
 
         {/* Hero */}
         <section style={{
-          paddingTop:    'var(--space-16)',
-          paddingBottom: 'var(--space-8)',
+          paddingTop:    'var(--space-8)',
+          paddingBottom: 'var(--space-6)',
           position:      'relative',
           background:    'linear-gradient(160deg,#e8f4fd 0%,#f0f8ff 40%,#dff0ff 100%)',
           overflow:      'hidden',
@@ -164,7 +164,7 @@ export default function Calculator() {
         </section>
 
         {/* Form + Results */}
-        <section style={{ paddingTop:'var(--space-10)', paddingBottom:'var(--space-20)' }}>
+        <section style={{ paddingTop:'var(--space-8)', paddingBottom:'var(--space-20)' }}>
           <div className="container">
             <div style={{
               display:             'grid',
