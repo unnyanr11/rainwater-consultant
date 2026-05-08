@@ -16,6 +16,9 @@ import { useCityRainfallBreakdown } from '../../hooks/useCityRainfallBreakdown'
 
 const CO2_PER_LITRE     = 0.0003
 const WATER_RATE_PER_KL = 45
+const SQFT_TO_SQM       = 0.0929   // 1 sq.ft = 0.0929 m²
+// Textbook: Yield(L) = Area(m²) × Rainfall(mm)  [gross]
+//           Net Yield = Gross × runoff_coefficient
 const CATEGORY_ORDER    = ['Residential', 'Commercial', 'Industrial', 'Agricultural']
 
 function AnimatedNumber({ value, unit = '' }) {
@@ -74,7 +77,7 @@ export default function Calculator() {
   const [selectedCity, setSelectedCity] = useState(null)
   const { data: roofTypes,     loading: loadingRoofs } = useRoofTypes()
   const { data: propertyTypes, loading: loadingProps } = usePropertyTypes()
-  const [form,             setForm]         = useState({ roofArea: '', roofTypeId: '', propertyType: '' })
+  const [form,             setForm]         = useState({ roofArea: '', roofTypeId: '', propertyType: '', areaUnit: 'sqm' })
   const [selectedScenario, setSelectedScenario] = useState('average')
   const [result,           setResult]       = useState(null)
   const [calculated,       setCalculated]   = useState(false)
@@ -98,17 +101,30 @@ export default function Calculator() {
 
   const calculate = useCallback(() => {
     if (!selectedCity) return
-    const rainfall    = breakdown ? breakdown.scenarios[selectedScenario].value : (selectedCity?.cached_avg_mm ?? 800)
+    const rainfall     = breakdown ? breakdown.scenarios[selectedScenario].value : (selectedCity?.cached_avg_mm ?? 800)
     const selectedRoof = roofTypes.find(r => r.id === form.roofTypeId)
-    const coeff       = selectedRoof?.runoff_coefficient ?? 0.80
-    const area        = parseFloat(form.roofArea) || 0
-    if (area <= 0) return
-    const annualHarvest = Math.round(area * (rainfall / 1000) * coeff * 1000)
+    const coeff        = selectedRoof?.runoff_coefficient ?? 0.80
+    const rawArea      = parseFloat(form.roofArea) || 0
+    if (rawArea <= 0) return
+
+    // Convert to sq.m if entered in sq.ft
+    const areaSqM = form.areaUnit === 'sqft' ? rawArea * SQFT_TO_SQM : rawArea
+
+    // Textbook formula: Gross Yield (L) = Area (m²) × Rainfall (mm)
+    // Net Yield = Gross × runoff_coefficient
+    const grossYield    = Math.round(areaSqM * rainfall)          // L/year
+    const annualHarvest = Math.round(grossYield * coeff)          // net L/year
     const dailyAvg      = Math.round(annualHarvest / 365)
     const tankSize      = Math.round(dailyAvg * 15)
     const annualSaving  = Math.round((annualHarvest / 1000) * WATER_RATE_PER_KL)
     const co2Saved      = Math.round(annualHarvest * CO2_PER_LITRE)
-    setResult({ annualHarvest, dailyAvg, tankSize, annualSaving, co2Saved, rainfall, scenario: selectedScenario })
+
+    setResult({
+      grossYield, annualHarvest, dailyAvg, tankSize,
+      annualSaving, co2Saved, rainfall, coeff,
+      areaSqM: Math.round(areaSqM),
+      scenario: selectedScenario,
+    })
     setCalculated(true)
   }, [selectedCity, breakdown, selectedScenario, roofTypes, form])
 
@@ -123,11 +139,14 @@ export default function Calculator() {
         input:focus, select:focus { border-color: var(--color-primary) !important; box-shadow: 0 0 0 3px var(--color-primary-highlight); }
         .calc-eyebrow { display:inline-flex; align-items:center; gap:6px; font-size:var(--text-xs); font-weight:700; text-transform:uppercase; letter-spacing:0.12em; color:var(--color-primary); margin-bottom:var(--space-3); }
         .calc-gradient { background:var(--gradient-water); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .unit-toggle button { padding:4px 12px; border:1.5px solid var(--color-border); background:transparent; color:var(--color-text-muted); font-size:var(--text-xs); font-weight:600; cursor:pointer; transition:all 150ms; }
+        .unit-toggle button.active { background:var(--color-primary); border-color:var(--color-primary); color:#fff; }
+        .unit-toggle button:first-child { border-radius:var(--radius-md) 0 0 var(--radius-md); border-right:none; }
+        .unit-toggle button:last-child  { border-radius:0 var(--radius-md) var(--radius-md) 0; }
       `}</style>
 
       <Navbar />
 
-      {/* ── same wrapper pattern as Home.jsx ── */}
       <div style={{ paddingTop: '64px' }}>
 
         {/* Hero */}
@@ -232,13 +251,26 @@ export default function Calculator() {
                     )}
                   </AnimatePresence>
 
+                  {/* ── Roof area with unit toggle ── */}
                   <div>
-                    <label style={labelStyle}>Rooftop / Catchment Area (sq.m)</label>
+                    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'var(--space-2)' }}>
+                      <label style={{ ...labelStyle, marginBottom:0 }}>Rooftop / Catchment Area</label>
+                      <div className="unit-toggle" style={{ display:'flex' }}>
+                        <button className={form.areaUnit === 'sqm'  ? 'active' : ''} onClick={() => update('areaUnit','sqm')}>sq.m</button>
+                        <button className={form.areaUnit === 'sqft' ? 'active' : ''} onClick={() => update('areaUnit','sqft')}>sq.ft</button>
+                      </div>
+                    </div>
                     <input
                       type="number" value={form.roofArea} min={0}
                       onChange={e => update('roofArea', e.target.value)}
-                      placeholder="e.g. 200" style={inputStyle}
+                      placeholder={form.areaUnit === 'sqm' ? 'e.g. 100 sq.m' : 'e.g. 1000 sq.ft'}
+                      style={inputStyle}
                     />
+                    {form.roofArea && form.areaUnit === 'sqft' && (
+                      <p style={{ fontSize:'var(--text-xs)', color:'var(--color-text-faint)', marginTop:4 }}>
+                        ≈ {Math.round(parseFloat(form.roofArea) * SQFT_TO_SQM)} sq.m
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -311,16 +343,24 @@ export default function Calculator() {
                         </p>
                       </div>
 
+                      {/* Formula breakdown */}
+                      <div style={{ padding:'var(--space-4)', borderRadius:'var(--radius-lg)', background:'var(--color-surface-offset)', border:'1px solid var(--color-border)', marginBottom:'var(--space-5)', fontSize:'var(--text-xs)', color:'var(--color-text-muted)', lineHeight:1.8 }}>
+                        <div style={{ fontWeight:700, color:'var(--color-text)', marginBottom:4 }}>How this was calculated</div>
+                        <div>Gross Yield = {result.areaSqM} m² × {result.rainfall} mm = <strong style={{ color:'var(--color-primary)' }}>{result.grossYield.toLocaleString('en-IN')} L/yr</strong></div>
+                        <div>Net Yield = {result.grossYield.toLocaleString('en-IN')} × {(result.coeff * 100).toFixed(0)}% runoff = <strong style={{ color:'var(--color-primary)' }}>{result.annualHarvest.toLocaleString('en-IN')} L/yr</strong></div>
+                      </div>
+
                       <div style={{ display:'flex', justifyContent:'center', gap:'var(--space-8)', marginBottom:'var(--space-8)', flexWrap:'wrap' }}>
                         <LiquidMeter value={Math.min(100,Math.round((result.annualHarvest/500000)*100))} max={100} label="Harvest Level" color="#52b5e8" size={112} />
                       </div>
 
                       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'var(--space-3)', marginBottom:'var(--space-5)' }}>
                         {[
-                          { label:'Annual Harvest',     value:result.annualHarvest, unit:' L',     color:'#0b6fb8' },
-                          { label:'Daily Average',      value:result.dailyAvg,      unit:' L/day', color:'#52b5e8' },
-                          { label:'Recommended Tank',   value:result.tankSize,      unit:' L',     color:'#11a36a' },
-                          { label:'Est. Annual Saving', value:result.annualSaving,  unit:' ₹',     color:'#d98c11' },
+                          { label:'Gross Yield',        value:result.grossYield,    unit:' L',     color:'#3a7fbf' },
+                          { label:'Net Annual Harvest',  value:result.annualHarvest, unit:' L',     color:'#0b6fb8' },
+                          { label:'Daily Average',       value:result.dailyAvg,      unit:' L/day', color:'#52b5e8' },
+                          { label:'Recommended Tank',    value:result.tankSize,      unit:' L',     color:'#11a36a' },
+                          { label:'Est. Annual Saving',  value:result.annualSaving,  unit:' ₹',     color:'#d98c11' },
                         ].map((stat, i) => (
                           <motion.div key={stat.label}
                             initial={{ opacity:0, scale:0.95 }} animate={{ opacity:1, scale:1 }}
