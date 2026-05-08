@@ -87,22 +87,22 @@
 /* ── Dark mode ──────────────────────────────────────────────────────────────── */
 [data-theme="dark"],
 @media (prefers-color-scheme: dark) { :root:not([data-theme]) {
-  --color-bg:               #111210;
-  --color-surface:          #171614;
-  --color-surface-2:        #1c1b19;
-  --color-surface-offset:   #1d1c1a;
-  --color-surface-offset-2: #22211f;
-  --color-surface-dynamic:  #2d2c2a;
-  --color-divider:          #262523;
-  --color-border:           #393836;
-  --color-text:             #cdccca;
-  --color-text-muted:       #797876;
-  --color-text-faint:       #5a5957;
-  --color-text-inverse:     #2b2a28;
-  --color-primary:          #52b5e8;
-  --color-primary-hover:    #3aa0d4;
-  --color-primary-active:   #227f8b;
-  --color-primary-highlight:#1a3a4a;
+  --color-bg:               #06141f;
+  --color-surface:          #0a1d2c;
+  --color-surface-2:        #10273b;
+  --color-surface-offset:   #14334d;
+  --color-surface-offset-2: #1d4665;
+  --color-surface-dynamic:  #255d85;
+  --color-divider:          rgba(233,247,255,0.08);
+  --color-border:           rgba(233,247,255,0.12);
+  --color-text:             #e9f7ff;
+  --color-text-muted:       #a7c7dc;
+  --color-text-faint:       #7394ab;
+  --color-text-inverse:     #071521;
+  --color-primary:          #5ab8ff;
+  --color-primary-hover:    #85ccff;
+  --color-primary-active:   #3fa8f3;
+  --color-primary-highlight:rgba(90,184,255,0.16);
 }}
 
 /* ── Base reset ─────────────────────────────────────────────────────────────── */
