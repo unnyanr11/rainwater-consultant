@@ -38,17 +38,15 @@ export default function App() {
           <Route path="/forgot-password"           element={<ForgotPassword />} />
 
           {/* Protected — client only */}
-          <Route path="/client" element={
-            <ProtectedRoute requiredRole="client"><ClientDashboard /></ProtectedRoute>
-          } />
+          <Route path="/client" element={<ProtectedRoute role="client"><ClientDashboard /></ProtectedRoute>} />
 
           {/* Protected — admin only */}
-          <Route path="/admin"           element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
-          <Route path="/admin/visits"    element={<ProtectedRoute requiredRole="admin"><AdminVisits /></ProtectedRoute>} />
-          <Route path="/admin/payments"  element={<ProtectedRoute requiredRole="admin"><AdminPayments /></ProtectedRoute>} />
-          <Route path="/admin/designs"   element={<ProtectedRoute requiredRole="admin"><AdminDesigns /></ProtectedRoute>} />
-          <Route path="/admin/customers" element={<ProtectedRoute requiredRole="admin"><AdminCustomers /></ProtectedRoute>} />
-          <Route path="/admin/reports"   element={<ProtectedRoute requiredRole="admin"><AdminReports /></ProtectedRoute>} />
+          <Route path="/admin"              element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/visits"       element={<ProtectedRoute role="admin"><AdminVisits /></ProtectedRoute>} />
+          <Route path="/admin/payments"     element={<ProtectedRoute role="admin"><AdminPayments /></ProtectedRoute>} />
+          <Route path="/admin/designs"      element={<ProtectedRoute role="admin"><AdminDesigns /></ProtectedRoute>} />
+          <Route path="/admin/customers"    element={<ProtectedRoute role="admin"><AdminCustomers /></ProtectedRoute>} />
+          <Route path="/admin/reports"      element={<ProtectedRoute role="admin"><AdminReports /></ProtectedRoute>} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
