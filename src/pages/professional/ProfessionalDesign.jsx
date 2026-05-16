@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import Navbar from '../../components/home/Navbar'
 import {
-  MapPin, Building2, CloudRain, FileUp, Calendar,
+  MapPin, Building2, FileUp, Calendar,
   CheckCircle2, ArrowRight, ArrowLeft, Loader2,
   Layers, Home, Factory, TreePine, ShoppingBag, Star
 } from 'lucide-react'
@@ -11,7 +11,7 @@ import {
 // ─── Blue palette (replaces all teal/green hardcodes) ────────────
 const BLUE_DARK   = '#074a7e'   // --color-primary-active
 const BLUE_MID    = '#0b6fb8'   // --color-primary
-const BLUE_LIGHT  = '#52b5e8'   // light accent
+ // light accent
 const BLUE_BG     = 'rgba(11,111,184,0.07)'
 const BLUE_BORDER = 'rgba(11,111,184,0.20)'
 

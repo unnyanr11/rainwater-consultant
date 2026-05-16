@@ -3,7 +3,7 @@ import SectionHeading from '../../components/ui/SectionHeading'
 import Card from '../../components/ui/Card'
 import LiquidMeter from '../../components/motion/LiquidMeter'
 import RevealBlock from '../../components/motion/RevealBlock'
-import { Lock, CheckCircle, Clock, FileText } from 'lucide-react'
+import { Lock, CheckCircle, Clock } from 'lucide-react'
 
 export default function ClientDashboard() {
   return (

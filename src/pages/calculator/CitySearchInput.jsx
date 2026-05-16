@@ -163,8 +163,12 @@ export default function CitySearchInput({ onSelect, selectedCity, inputStyle, la
           aria-label="Search city"
           aria-expanded={isOpen}
           aria-autocomplete="list"
+          
+         
+          aria-controls="city-suggestions"
+          
           aria-activedescendant={activeIndex >= 0 ? `city-option-${activeIndex}` : undefined}
-          role="combobox"
+          role="combobox" 
           style={{
             ...inputStyle,
             flex:         1,
@@ -235,6 +239,9 @@ export default function CitySearchInput({ onSelect, selectedCity, inputStyle, la
       <AnimatePresence>
         {locationError && (
           <motion.div
+          key="dropdown"
+            id="city-suggestions"
+            ref={dropdownRef}
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}

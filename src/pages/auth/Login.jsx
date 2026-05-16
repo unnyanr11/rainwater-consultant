@@ -30,7 +30,7 @@ export default function Login() {
     if (!user || !profile) return
     const dest = from || (profile.role === 'admin' ? '/admin' : '/client')
     navigate(dest, { replace: true })
-  }, [user, profile])
+  }, [user, profile,from, navigate])
 
   const handleSubmit = async (e) => {
     e.preventDefault()

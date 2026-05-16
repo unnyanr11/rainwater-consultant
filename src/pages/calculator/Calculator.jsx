@@ -73,7 +73,7 @@ const labelStyle = {
 export default function Calculator() {
   const navigate = useNavigate()
   const [selectedCity, setSelectedCity] = useState(null)
-  const { data: roofTypes,     loading: loadingRoofs } = useRoofTypes()
+const { data: roofTypes } = useRoofTypes()
   const [form,             setForm]         = useState({ roofArea: '', roofTypeId: '', areaUnit: 'sqm' })
   const [selectedScenario, setSelectedScenario] = useState('average')
   const [result,           setResult]       = useState(null)
