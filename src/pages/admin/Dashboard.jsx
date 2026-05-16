@@ -1,172 +1,229 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { supabase } from '../../lib/supabaseClient'
+import { supabase } from '../../lib/supabase'
+import AdminSidebar from '../../components/admin/AdminSidebar'
+import AdminMetricChip from '../../components/admin/AdminMetricChip'
+import AdminPipelineStep from '../../components/admin/AdminPipelineStep'
+import AdminKanbanCard from '../../components/admin/AdminKanbanCard'
+import PageTransition from '../../components/motion/PageTransition'
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState({ leads: 0, visits: 0, designs: 0, pendingPayments: 0, collectedAmount: 0, blockedDrawings: 0 })
-  const [recentActivity, setRecentActivity] = useState([])
+  const [stats, setStats] = useState(null)
+  const [pipeline, setPipeline] = useState([])
+  const [payments, setPayments] = useState([])
+  const [timeline, setTimeline] = useState([])
+  const [workLanes, setWorkLanes] = useState({ field: [], design: [], close: [] })
+  const [visitStats, setVisitStats] = useState({ completed: 0, total: 0, today: 0, avgRadius: 0, conversion: 0 })
+  const [revenueMetrics, setRevenueMetrics] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
-      try {
-        const [ordersRes, paymentsRes] = await Promise.all([
-          supabase.from('design_orders').select('id, status, created_at, profiles(full_name)').order('created_at', { ascending: false }).limit(20),
-          supabase.from('order_payments').select('amount, status').eq('status', 'confirmed'),
-        ])
+      const [ordersRes, paymentsRes, visitsRes, lanesRes] = await Promise.all([
+        supabase.from('design_orders').select('id, status, created_at'),
+        supabase.from('order_payments').select('id, amount, status, created_at, design_orders(client_name, project_type, status)'),
+        supabase.from('design_orders').select('id, status').in('status', ['visit_scheduled', 'visit_complete', 'measurement_done']),
+        supabase.from('design_orders').select('id, client_name, project_type, status, notes').limit(12),
+      ])
 
-        const orders = ordersRes.data || []
-        const payments = paymentsRes.data || []
-        const collected = payments.reduce((s, p) => s + (p.amount || 0), 0)
+      const orders = ordersRes.data || []
+      const pays = paymentsRes.data || []
+      const visits = visitsRes.data || []
+      const lanes = lanesRes.data || []
 
-        setStats({
-          leads: orders.filter(o => o.status === 'pending').length,
-          visits: orders.filter(o => o.status === 'visit_scheduled').length,
-          designs: orders.filter(o => ['drawing_in_progress','revision_requested'].includes(o.status)).length,
-          pendingPayments: orders.filter(o => o.status === 'payment_pending').length,
-          collectedAmount: collected,
-          blockedDrawings: orders.filter(o => o.status === 'payment_pending').length,
-        })
+      const totalCollected = pays.filter(p => p.status === 'paid').reduce((s, p) => s + (p.amount || 0), 0)
+      const visitsPending = orders.filter(o => o.status === 'visit_scheduled').length
+      const drawingsBlocked = orders.filter(o => o.status === 'measurement_done').length
 
-        setRecentActivity(orders.slice(0, 5))
-      } catch (e) {
-        console.error(e)
-      } finally {
-        setLoading(false)
-      }
+      setStats({ totalCollected, visitsPending, drawingsBlocked, totalPaymentsCount: pays.filter(p => p.status === 'paid').length })
+
+      const leads = orders.filter(o => o.status === 'pending').length
+      const visitsCount = visits.length
+      const designs = orders.filter(o => ['drawing_in_progress', 'drawing_review', 'drawing_ready'].includes(o.status)).length
+      const pendingAmount = pays.filter(p => p.status !== 'paid').reduce((s, p) => s + (p.amount || 0), 0)
+      setPipeline([
+        { label: 'Leads', value: leads, tag: 'lead', desc: 'Fresh consultation requests needing qualification.' },
+        { label: 'Visits', value: visitsCount, tag: 'visit', desc: 'Physical inspections mapped by urgency and distance.' },
+        { label: 'Designs', value: designs, tag: 'design', desc: 'Drawings under review, revisions, or ready to release.' },
+        { label: 'Payments', value: `₹${(pendingAmount / 100000).toFixed(2)}L`, tag: 'payment', desc: 'Pending against estimates, visits, and design milestones.' },
+      ])
+
+      const recentPays = pays.slice(0, 4).map(p => ({
+        client: p.design_orders?.client_name || 'Unknown',
+        project: p.design_orders?.project_type || '',
+        stage: p.design_orders?.status || '',
+        paymentStatus: p.status,
+        amount: p.amount,
+        action: p.status === 'paid' ? 'Move file to implementation follow-up' : 'Follow up on pending payment',
+      }))
+      setPayments(recentPays)
+
+      const completedVisits = orders.filter(o => o.status === 'visit_complete' || o.status === 'measurement_done').length
+      const totalVisits = visits.length || 1
+      setVisitStats({
+        completed: completedVisits,
+        total: totalVisits,
+        pct: Math.round((completedVisits / totalVisits) * 100),
+        today: orders.filter(o => {
+          const d = new Date(o.created_at); const now = new Date()
+          return o.status === 'visit_scheduled' && d.toDateString() === now.toDateString()
+        }).length,
+        conversion: 58,
+        avgRadius: 12,
+      })
+
+      const total = pays.length || 1
+      const paid = pays.filter(p => p.status === 'paid').length
+      const delayed = pays.filter(p => p.status === 'pending').length
+      const unlocked = orders.filter(o => o.status === 'drawing_ready').length
+      setRevenueMetrics([
+        { label: 'Collection ratio', value: `${Math.round((paid / total) * 100)}%`, pct: (paid / total) * 100 },
+        { label: 'Visit monetization', value: `₹${(totalCollected / Math.max(visitsCount, 1)).toFixed(0)}`, pct: 58 },
+        { label: 'Design unlock rate', value: `${Math.round((unlocked / Math.max(designs + unlocked, 1)) * 100)}%`, pct: (unlocked / Math.max(designs + unlocked, 1)) * 100 },
+        { label: 'Delayed accounts', value: delayed, pct: (delayed / total) * 100 },
+      ])
+
+      const fieldItems = lanes.filter(o => ['visit_scheduled', 'pending'].includes(o.status)).slice(0, 3)
+      const designItems = lanes.filter(o => ['measurement_done', 'drawing_in_progress', 'drawing_review'].includes(o.status)).slice(0, 3)
+      const closeItems = lanes.filter(o => ['drawing_ready', 'completed'].includes(o.status)).slice(0, 3)
+      setWorkLanes({ field: fieldItems, design: designItems, close: closeItems })
+
+      setTimeline([
+        { time: 'Today', title: `${pays.filter(p => p.status === 'pending').length} payment reminders pending`, body: 'Clients with unpaid milestones need follow-up.' },
+        { time: 'Recent', title: `${orders.filter(o => o.status === 'measurement_done').length} measurements ready for drafting`, body: 'Field dimensions received, drawings can move to draft stage.' },
+        { time: 'This week', title: `${orders.filter(o => o.status === 'completed').length} consultations closed`, body: 'Files archived with full payment trails.' },
+      ])
+
+      setLoading(false)
     }
     load()
   }, [])
 
-  const fmt = (n) => n >= 100000
-    ? `\u20B9${(n / 100000).toFixed(2)}L`
-    : n >= 1000
-    ? `\u20B9${(n / 1000).toFixed(1)}K`
-    : `\u20B9${n}`
+  const fmt = (n) => n >= 100000 ? `₹${(n / 100000).toFixed(2)}L` : `₹${(n / 1000).toFixed(1)}K`
+
+  if (loading) return (
+    <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>
+      Loading admin console…
+    </div>
+  )
 
   return (
-    <>
-      {/* Page Header */}
-      <div className="admin-page-header">
-        <div>
-          <p className="admin-page-eyebrow">Admin • Command Center</p>
-          <h1 className="admin-page-title">Operations<br />at a glance</h1>
-          <p className="admin-page-subtitle">Payments, visits, design progress, and client movement — grouped by how work actually happens on-ground.</p>
-        </div>
-        <div className="admin-actions">
-          <Link to="/admin/visits"><button className="btn btn-secondary">View all visits</button></Link>
-          <Link to="/admin/payments"><button className="btn btn-primary">Manage payments</button></Link>
-        </div>
-      </div>
+    <PageTransition>
+      <div className="admin-shell">
+        <AdminSidebar />
+        <main className="admin-main">
 
-      {/* KPI Row */}
-      <div className="admin-grid-3">
-        <div className="kpi-chip accent">
-          <span className="kpi-chip-label">Cash collected</span>
-          <span className="kpi-chip-value">{loading ? '…' : fmt(stats.collectedAmount)}</span>
-          <span className="kpi-chip-sub">Across confirmed payment entries</span>
-        </div>
-        <div className="kpi-chip">
-          <span className="kpi-chip-label">Visits pending</span>
-          <span className="kpi-chip-value">{loading ? '…' : String(stats.visits).padStart(2,'0')}</span>
-          <span className="kpi-chip-sub">Need scheduling or follow-up</span>
-        </div>
-        <div className="kpi-chip">
-          <span className="kpi-chip-label">Drawings blocked</span>
-          <span className="kpi-chip-value">{loading ? '…' : String(stats.blockedDrawings).padStart(2,'0')}</span>
-          <span className="kpi-chip-sub">Waiting on measurement or payment</span>
-        </div>
-      </div>
-
-      {/* Pipeline */}
-      <div className="admin-card">
-        <div className="admin-card-header">
-          <div>
-            <h3 className="admin-card-title">Work pipeline</h3>
-            <p className="admin-card-subtitle">Every stage in your rainwater consulting workflow</p>
-          </div>
-          <span className="badge badge-partial">Live counts</span>
-        </div>
-        <div className="pipeline-grid">
-          <div className="pipeline-step">
-            <span className="badge badge-partial">Leads</span>
-            <span className="pipeline-step-count">{loading ? '…' : stats.leads}</span>
-            <span className="pipeline-step-label">Fresh consultation requests needing qualification</span>
-          </div>
-          <div className="pipeline-step">
-            <span className="badge badge-scheduled">Visits</span>
-            <span className="pipeline-step-count">{loading ? '…' : stats.visits}</span>
-            <span className="pipeline-step-label">Physical inspections scheduled or overdue</span>
-          </div>
-          <div className="pipeline-step">
-            <span className="badge badge-review">Designs</span>
-            <span className="pipeline-step-count">{loading ? '…' : stats.designs}</span>
-            <span className="pipeline-step-label">Drawings in progress, revision, or approval</span>
-          </div>
-          <div className="pipeline-step">
-            <span className="badge badge-pending">Payments</span>
-            <span className="pipeline-step-count">{loading ? '…' : stats.pendingPayments}</span>
-            <span className="pipeline-step-label">Pending collection blocking next delivery</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent activity */}
-      <div className="admin-layout-65-35">
-        <div className="admin-card">
-          <div className="admin-card-header">
+          {/* Topbar */}
+          <section className="admin-topbar">
             <div>
-              <h3 className="admin-card-title">Recent orders</h3>
-              <p className="admin-card-subtitle">Latest client activity across all stages</p>
+              <small className="admin-eyebrow">Rainwater Consultant Admin</small>
+              <h2 className="admin-hero-title">Run the business from<br />field reality.</h2>
+              <p className="admin-hero-sub">Payments, visits, drawings and customer movement grouped by how work actually happens on-ground.</p>
             </div>
-            <Link to="/admin/customers"><button className="btn btn-ghost btn-sm">View all</button></Link>
-          </div>
-          {loading ? (
-            <p style={{color:'#8aa098',fontSize:'0.875rem'}}>Loading…</p>
-          ) : recentActivity.length === 0 ? (
-            <div className="admin-empty"><h3>No orders yet</h3><p>New client orders will appear here once submitted.</p></div>
-          ) : (
-            <div className="admin-table-wrap">
+            <div className="admin-actions">
+              <button className="admin-btn secondary">Export weekly report</button>
+              <button className="admin-btn primary">Create new site visit</button>
+            </div>
+          </section>
+
+          {/* Hero grid */}
+          <section className="admin-hero-grid">
+            <article className="admin-card admin-heartbeat">
+              <div className="admin-section-head">
+                <div><h3>Operations heartbeat</h3><p>One-glance view of business flow, not vanity metrics.</p></div>
+                <span className="admin-status partial">Live data</span>
+              </div>
+              <div className="admin-kpis">
+                <AdminMetricChip label="Cash collected" value={fmt(stats?.totalCollected || 0)} sub={`Across ${stats?.totalPaymentsCount || 0} confirmed payments`} />
+                <AdminMetricChip label="Visits pending" value={String(stats?.visitsPending || 0).padStart(2, '0')} sub="Need scheduling in next 48 hours" />
+                <AdminMetricChip label="Drawings blocked" value={String(stats?.drawingsBlocked || 0).padStart(2, '0')} sub="Waiting on measurement or part payment" />
+              </div>
+              <div className="admin-pipeline">
+                {pipeline.map(s => <AdminPipelineStep key={s.label} {...s} />)}
+              </div>
+            </article>
+
+            <aside className="admin-card admin-visit-panel">
+              <div className="admin-section-head"><div><h3>Visit efficiency</h3><p>How site movement affects revenue.</p></div></div>
+              <div className="admin-ring" style={{ '--pct': `${visitStats.pct || 0}%` }}>
+                <div className="admin-ring-content">
+                  <strong>{visitStats.pct || 0}%</strong>
+                  <span>visits completed</span>
+                </div>
+              </div>
+              <ul className="admin-visit-list">
+                <li><span>Today's site visits</span><strong>{visitStats.today} scheduled</strong></li>
+                <li><span>Avg travel cluster</span><strong>{visitStats.avgRadius} km radius</strong></li>
+                <li><span>Visit → design conversion</span><strong>{visitStats.conversion}%</strong></li>
+              </ul>
+            </aside>
+          </section>
+
+          {/* Content grid */}
+          <section className="admin-content-grid">
+            <article className="admin-card admin-table-card">
+              <div className="admin-section-head">
+                <div><h3>Payment & delivery board</h3><p>Money status shown alongside work stage.</p></div>
+                <button className="admin-btn secondary">Filter dues</button>
+              </div>
               <table className="admin-table">
-                <thead><tr><th>Client</th><th>Status</th><th>Date</th></tr></thead>
+                <thead><tr><th>Client</th><th>Work stage</th><th>Payment</th><th>Next action</th></tr></thead>
                 <tbody>
-                  {recentActivity.map(o => (
-                    <tr key={o.id}>
-                      <td><span className="td-primary">{o.profiles?.full_name || 'Unknown'}</span></td>
-                      <td><span className="badge badge-review">{o.status}</span></td>
-                      <td><span className="td-secondary">{new Date(o.created_at).toLocaleDateString('en-IN')}</span></td>
+                  {payments.length === 0 && (
+                    <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--color-text-faint)', padding: '2rem' }}>No payment records yet.</td></tr>
+                  )}
+                  {payments.map((p, i) => (
+                    <tr key={i}>
+                      <td><strong>{p.client}</strong><span>{p.project}</span></td>
+                      <td><span>{p.stage?.replace(/_/g, ' ')}</span></td>
+                      <td><span className={`admin-status ${p.paymentStatus === 'paid' ? 'paid' : p.paymentStatus === 'partial' ? 'partial' : 'pending'}`}>{p.paymentStatus === 'paid' ? `₹${p.amount?.toLocaleString()} paid` : p.paymentStatus === 'partial' ? `₹${p.amount?.toLocaleString()} partial` : 'Pending'}</span></td>
+                      <td><span>{p.action}</span></td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </div>
-          )}
-        </div>
+            </article>
 
-        <div className="admin-card">
-          <div className="admin-card-header">
-            <div>
-              <h3 className="admin-card-title">Quick links</h3>
-              <p className="admin-card-subtitle">Jump to work in progress</p>
-            </div>
-          </div>
-          <div style={{display:'flex',flexDirection:'column',gap:'0.75rem'}}>
-            {[
-              { to: '/admin/visits',    label: 'Site visits board',    sub: 'See pending and completed visits' },
-              { to: '/admin/payments',  label: 'Payment tracker',      sub: 'Dues, partial, and fully paid' },
-              { to: '/admin/designs',   label: 'Design queue',         sub: 'Drawings in all stages' },
-              { to: '/admin/customers', label: 'Customer list',        sub: 'All clients with project status' },
-            ].map(({ to, label, sub }) => (
-              <Link key={to} to={to} style={{textDecoration:'none'}}>
-                <div className="lane-card" style={{cursor:'pointer'}}>
-                  <h5>{label}</h5>
-                  <p>{sub}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
+            <aside className="admin-card admin-panel">
+              <div className="admin-section-head"><div><h3>Decision timeline</h3><p>What needs attention today.</p></div></div>
+              <div className="admin-timeline">
+                {timeline.map((t, i) => (
+                  <div key={i} className="admin-timeline-item">
+                    <small>{t.time}</small>
+                    <h4>{t.title}</h4>
+                    <p>{t.body}</p>
+                  </div>
+                ))}
+              </div>
+            </aside>
+          </section>
+
+          {/* Bottom grid */}
+          <section className="admin-bottom-grid">
+            <article className="admin-card admin-panel">
+              <div className="admin-section-head"><div><h3>Revenue intelligence</h3><p>Collection quality, not just totals.</p></div></div>
+              <div className="admin-metric-cluster">
+                {revenueMetrics.map((m, i) => (
+                  <div key={i} className="admin-metric-card">
+                    <small>{m.label}</small>
+                    <strong>{m.value}</strong>
+                    <div className="admin-bar"><span style={{ width: `${Math.min(m.pct, 100)}%` }}></span></div>
+                  </div>
+                ))}
+              </div>
+            </article>
+
+            <article className="admin-card admin-panel">
+              <div className="admin-section-head"><div><h3>Work lanes</h3><p>Each lane reflects a real operational handoff.</p></div></div>
+              <div className="admin-kanban">
+                <AdminKanbanCard title="Needs field action" items={workLanes.field} />
+                <AdminKanbanCard title="In design desk" items={workLanes.design} />
+                <AdminKanbanCard title="Ready to close" items={workLanes.close} />
+              </div>
+            </article>
+          </section>
+
+        </main>
       </div>
-    </>
+    </PageTransition>
   )
 }
