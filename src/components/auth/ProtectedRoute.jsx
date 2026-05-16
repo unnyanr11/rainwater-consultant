@@ -1,8 +1,8 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 
-export default function ProtectedRoute({ children }) {
-  const { user, loading } = useAuth()
+export default function ProtectedRoute({ children, role }) {
+  const { user, profile, loading } = useAuth()
   const location = useLocation()
 
   if (loading) return (
@@ -12,6 +12,13 @@ export default function ProtectedRoute({ children }) {
   )
 
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />
+
+  // If a required role is specified, enforce it
+  if (role && profile?.role !== role) {
+    // Redirect to their correct dashboard instead of 403
+    const dest = profile?.role === 'admin' ? '/admin' : '/client'
+    return <Navigate to={dest} replace />
+  }
 
   return children
 }
