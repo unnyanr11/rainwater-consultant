@@ -73,7 +73,7 @@ export default function AdminDashboard() {
 
       const total = pays.length || 1
       const paid = pays.filter(p => p.status === 'paid').length
-      const partial = pays.filter(p => p.status === 'partial').length
+   
       const delayed = pays.filter(p => p.status === 'pending').length
       const unlocked = orders.filter(o => o.status === 'drawing_ready').length
       setRevenueMetrics([
