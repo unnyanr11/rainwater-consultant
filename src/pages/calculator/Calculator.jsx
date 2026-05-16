@@ -36,17 +36,6 @@ function AnimatedNumber({ value, unit = '' }) {
   return <span>{display.toLocaleString('en-IN')}{unit}</span>
 }
 
-function Skeleton({ height = 44 }) {
-  return (
-    <div style={{
-      height,
-      borderRadius: 'var(--radius-md)',
-      background: 'linear-gradient(90deg,var(--color-surface-offset) 25%,var(--color-surface-dynamic) 50%,var(--color-surface-offset) 75%)',
-      backgroundSize: '200% 100%',
-      animation: 'shimmer 1.5s ease-in-out infinite',
-    }} />
-  )
-}
 
 const inputStyle = {
   width: '100%',
