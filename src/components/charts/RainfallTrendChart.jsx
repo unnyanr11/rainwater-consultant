@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  ReferenceLine, ResponsiveContainer, Dot
+  ReferenceLine, ResponsiveContainer
 } from 'recharts'
 import { motion } from 'framer-motion'
 
