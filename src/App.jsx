@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute   from './components/auth/ProtectedRoute'
-import AdminRedirect    from './components/auth/AdminRedirect'
+import PublicOnlyRoute  from './components/auth/PublicOnlyRoute'
 
 import Home                from './pages/public/Home'
 import Services            from './pages/public/Services'
@@ -26,44 +26,28 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public — admins are silently redirected to /admin */}
-          <Route path="/"                        element={<AdminRedirect><Home /></AdminRedirect>} />
-          <Route path="/services"                element={<AdminRedirect><Services /></AdminRedirect>} />
-          <Route path="/how-it-works"            element={<AdminRedirect><HowItWorksPage /></AdminRedirect>} />
-          <Route path="/pricing"                 element={<AdminRedirect><Pricing /></AdminRedirect>} />
+          {/* Public — redirect away if already logged in */}
+          <Route path="/"                          element={<PublicOnlyRoute><Home /></PublicOnlyRoute>} />
+          <Route path="/services"                  element={<PublicOnlyRoute><Services /></PublicOnlyRoute>} />
+          <Route path="/how-it-works"              element={<PublicOnlyRoute><HowItWorksPage /></PublicOnlyRoute>} />
+          <Route path="/pricing"                   element={<PublicOnlyRoute><Pricing /></PublicOnlyRoute>} />
+          <Route path="/calculator"                element={<PublicOnlyRoute><Calculator /></PublicOnlyRoute>} />
+          <Route path="/get-professional-design"   element={<PublicOnlyRoute><ProfessionalDesign /></PublicOnlyRoute>} />
+          <Route path="/signup"                    element={<PublicOnlyRoute><SignUp /></PublicOnlyRoute>} />
+          <Route path="/login"                     element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
+          <Route path="/verify-email"              element={<PublicOnlyRoute><VerifyEmail /></PublicOnlyRoute>} />
+          <Route path="/forgot-password"           element={<PublicOnlyRoute><ForgotPassword /></PublicOnlyRoute>} />
 
-          {/* These public pages are accessible to everyone regardless of role */}
-          <Route path="/calculator"              element={<Calculator />} />
-          <Route path="/get-professional-design" element={<ProfessionalDesign />} />
-          <Route path="/signup"                  element={<SignUp />} />
-          <Route path="/login"                   element={<Login />} />
-          <Route path="/verify-email"            element={<VerifyEmail />} />
-          <Route path="/forgot-password"         element={<ForgotPassword />} />
+          {/* Protected — client */}
+          <Route path="/client" element={<ProtectedRoute><ClientDashboard /></ProtectedRoute>} />
 
-          {/* Protected — client only */}
-          <Route path="/client" element={
-            <ProtectedRoute requiredRole="client"><ClientDashboard /></ProtectedRoute>
-          } />
-
-          {/* Protected — admin only */}
-          <Route path="/admin" element={
-            <ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>
-          } />
-          <Route path="/admin/visits" element={
-            <ProtectedRoute requiredRole="admin"><AdminVisits /></ProtectedRoute>
-          } />
-          <Route path="/admin/payments" element={
-            <ProtectedRoute requiredRole="admin"><AdminPayments /></ProtectedRoute>
-          } />
-          <Route path="/admin/designs" element={
-            <ProtectedRoute requiredRole="admin"><AdminDesigns /></ProtectedRoute>
-          } />
-          <Route path="/admin/customers" element={
-            <ProtectedRoute requiredRole="admin"><AdminCustomers /></ProtectedRoute>
-          } />
-          <Route path="/admin/reports" element={
-            <ProtectedRoute requiredRole="admin"><AdminReports /></ProtectedRoute>
-          } />
+          {/* Protected — admin multi-page */}
+          <Route path="/admin"              element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/visits"       element={<ProtectedRoute><AdminVisits /></ProtectedRoute>} />
+          <Route path="/admin/payments"     element={<ProtectedRoute><AdminPayments /></ProtectedRoute>} />
+          <Route path="/admin/designs"      element={<ProtectedRoute><AdminDesigns /></ProtectedRoute>} />
+          <Route path="/admin/customers"    element={<ProtectedRoute><AdminCustomers /></ProtectedRoute>} />
+          <Route path="/admin/reports"      element={<ProtectedRoute><AdminReports /></ProtectedRoute>} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
