@@ -21,7 +21,8 @@ export default function AdminDashboard() {
     async function load() {
       const [ordersRes, paymentsRes, visitsRes, lanesRes] = await Promise.all([
         supabase.from('design_orders').select('id, status, created_at'),
-        supabase.from('order_payments').select('id, amount_inr, payment_status, created_at, design_orders(contact_name, building_type, status)'),
+        // Explicit FK hint to guarantee the join never returns null
+        supabase.from('order_payments').select('id, amount_inr, payment_status, created_at, design_orders!order_id(contact_name, building_type, status)'),
         supabase.from('design_orders').select('id, status').in('status', ['visit_scheduled', 'visit_complete', 'measurement_done']),
         supabase.from('design_orders').select('id, contact_name, building_type, status, message').limit(12),
       ])
@@ -174,7 +175,7 @@ export default function AdminDashboard() {
                   )}
                   {payments.map((p, i) => (
                     <tr key={i}>
-                      <td><strong>{p.client}</strong><span>{p.project}</span></td>
+                      <td><strong>{p.client}</strong><span>{p.project?.replace(/_/g, ' ')}</span></td>
                       <td><span>{p.stage?.replace(/_/g, ' ')}</span></td>
                       <td><span className={`admin-status ${p.paymentStatus === 'paid' ? 'paid' : p.paymentStatus === 'partial' ? 'partial' : 'pending'}`}>{p.paymentStatus === 'paid' ? `₹${p.amount?.toLocaleString()} paid` : p.paymentStatus === 'partial' ? `₹${p.amount?.toLocaleString()} partial` : 'Pending'}</span></td>
                       <td><span>{p.action}</span></td>

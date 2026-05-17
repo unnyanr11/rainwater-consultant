@@ -31,7 +31,8 @@ export default function AdminDesigns() {
     async function load() {
       const { data } = await supabase
         .from('design_orders')
-        .select('id, contact_name, building_type, status, message, created_at')
+        // Include order_files via FK to show drawing file counts + unlock status
+        .select('id, contact_name, building_type, city, status, admin_notes, created_at, order_files(id, is_drawing, is_unlocked)')
         .in('status', ['measurement_done', 'drawing_in_progress', 'drawing_review', 'drawing_ready', 'completed'])
         .order('created_at', { ascending: false })
       setDesigns(data || [])
@@ -41,6 +42,13 @@ export default function AdminDesigns() {
   }, [])
 
   const byStage = (s) => designs.filter(d => d.status === s)
+
+  // Helper: summarise file counts for a design order
+  const fileInfo = (files = []) => {
+    const drawings = files.filter(f => f.is_drawing)
+    const unlocked = drawings.filter(f => f.is_unlocked)
+    return { total: files.length, drawings: drawings.length, unlocked: unlocked.length }
+  }
 
   const stats = [
     { label: 'In queue', value: String(designs.filter(d => d.status === 'measurement_done').length).padStart(2,'0'), sub: 'Ready to draft' },
@@ -86,14 +94,41 @@ export default function AdminDesigns() {
                     {byStage(status).length === 0 && (
                       <div className="admin-design-empty">Empty lane</div>
                     )}
-                    {byStage(status).map((d, i) => (
-                      <div key={d.id} className="admin-design-card" style={{ '--card-delay': `${i * 60}ms` }}>
-                        <strong>{d.contact_name || 'Client'}</strong>
-                        <span>{d.building_type || '—'}</span>
-                        {d.message && <p className="admin-design-note">{d.message}</p>}
-                        <small>{new Date(d.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</small>
-                      </div>
-                    ))}
+                    {byStage(status).map((d, i) => {
+                      const fi = fileInfo(d.order_files)
+                      return (
+                        <div key={d.id} className="admin-design-card" style={{ '--card-delay': `${i * 60}ms` }}>
+                          <strong>{d.contact_name || 'Client'}</strong>
+                          <span>{d.building_type?.replace(/_/g, ' ') || '—'}</span>
+                          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)' }}>{d.city || ''}</span>
+                          {d.admin_notes && <p className="admin-design-note">{d.admin_notes}</p>}
+                          {/* File summary */}
+                          <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-2)', flexWrap: 'wrap' }}>
+                            {fi.total > 0 ? (
+                              <>
+                                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
+                                  📎 {fi.total} file{fi.total !== 1 ? 's' : ''}
+                                </span>
+                                {fi.drawings > 0 && (
+                                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
+                                    ✏️ {fi.drawings} drawing{fi.drawings !== 1 ? 's' : ''}
+                                  </span>
+                                )}
+                                {fi.drawings > 0 && (
+                                  <span className={`admin-status ${fi.unlocked === fi.drawings ? 'paid' : fi.unlocked > 0 ? 'partial' : 'pending'}`}
+                                    style={{ fontSize: 'var(--text-xs)', padding: '1px 6px' }}>
+                                    {fi.unlocked}/{fi.drawings} unlocked
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)' }}>No files yet</span>
+                            )}
+                          </div>
+                          <small>{new Date(d.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</small>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               ))}
@@ -104,17 +139,30 @@ export default function AdminDesigns() {
                 <AdminEmptyState icon="✏️" title="No designs in queue" body="Start by adding a measurement-done order." />
               ) : (
                 <table className="admin-table">
-                  <thead><tr><th>Client</th><th>Project</th><th>Stage</th><th>Notes</th><th>Date</th></tr></thead>
+                  <thead><tr><th>Client</th><th>Project</th><th>City</th><th>Stage</th><th>Files</th><th>Drawings</th><th>Admin notes</th><th>Date</th></tr></thead>
                   <tbody>
-                    {designs.map((d, i) => (
-                      <tr key={d.id} className="admin-table-row" style={{ '--row-delay': `${i * 40}ms` }}>
-                        <td><strong>{d.contact_name || '—'}</strong></td>
-                        <td><span>{d.building_type || '—'}</span></td>
-                        <td><span className={`admin-status ${STAGE_COLORS[d.status] || 'pending'}`}>{STAGE_LABELS[d.status] || d.status}</span></td>
-                        <td><span style={{ maxWidth: '22ch', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.message || '—'}</span></td>
-                        <td><span>{new Date(d.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span></td>
-                      </tr>
-                    ))}
+                    {designs.map((d, i) => {
+                      const fi = fileInfo(d.order_files)
+                      return (
+                        <tr key={d.id} className="admin-table-row" style={{ '--row-delay': `${i * 40}ms` }}>
+                          <td><strong>{d.contact_name || '—'}</strong></td>
+                          <td><span>{d.building_type?.replace(/_/g, ' ') || '—'}</span></td>
+                          <td><span>{d.city || '—'}</span></td>
+                          <td><span className={`admin-status ${STAGE_COLORS[d.status] || 'pending'}`}>{STAGE_LABELS[d.status] || d.status}</span></td>
+                          <td><span>{fi.total > 0 ? `${fi.total} file${fi.total !== 1 ? 's' : ''}` : '—'}</span></td>
+                          <td>
+                            {fi.drawings > 0
+                              ? <span className={`admin-status ${fi.unlocked === fi.drawings ? 'paid' : fi.unlocked > 0 ? 'partial' : 'pending'}`}>
+                                  {fi.unlocked}/{fi.drawings} unlocked
+                                </span>
+                              : <span style={{ color: 'var(--color-text-faint)' }}>—</span>
+                            }
+                          </td>
+                          <td><span style={{ maxWidth: '22ch', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.admin_notes || '—'}</span></td>
+                          <td><span>{new Date(d.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span></td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               )}

@@ -15,7 +15,8 @@ export default function AdminPayments() {
     async function load() {
       const { data } = await supabase
         .from('order_payments')
-        .select('id, amount_inr, payment_status, created_at, design_orders(contact_name, building_type, status)')
+        // Explicit FK hint so the join is always resolved correctly
+        .select('id, amount_inr, payment_status, payment_type, paid_at, created_at, design_orders!order_id(contact_name, building_type, city, status)')
         .order('created_at', { ascending: false })
       setPayments(data || [])
       setLoading(false)
@@ -36,7 +37,6 @@ export default function AdminPayments() {
   ]
 
   const filtered = filter === 'all' ? payments : payments.filter(p => p.payment_status === filter)
-
   const collectionPct = payments.length ? (payments.filter(p => p.payment_status === 'paid').length / payments.length) * 100 : 0
 
   if (loading) return (
@@ -63,7 +63,6 @@ export default function AdminPayments() {
 
           <AdminStatRow stats={stats} />
 
-          {/* Collection progress bar */}
           <article className="admin-card admin-panel admin-stagger-in">
             <div className="admin-section-head">
               <div><h3>Collection health</h3><p>Breakdown by payment status.</p></div>
@@ -90,7 +89,6 @@ export default function AdminPayments() {
             </div>
           </article>
 
-          {/* Filter tabs */}
           <div className="admin-filter-tabs">
             {['all', 'paid', 'partial', 'pending'].map(f => (
               <button
@@ -106,7 +104,6 @@ export default function AdminPayments() {
             ))}
           </div>
 
-          {/* Payments table */}
           <article className="admin-card admin-table-card admin-stagger-in">
             <div className="admin-section-head">
               <div><h3>Payment register</h3><p>{filtered.length} records</p></div>
@@ -120,6 +117,7 @@ export default function AdminPayments() {
                     <th>Client</th>
                     <th>Project</th>
                     <th>Work stage</th>
+                    <th>Type</th>
                     <th>Amount</th>
                     <th>Status</th>
                     <th>Date</th>
@@ -129,15 +127,16 @@ export default function AdminPayments() {
                   {filtered.map((p, i) => (
                     <tr key={p.id} className="admin-table-row" style={{ '--row-delay': `${i * 40}ms` }}>
                       <td><strong>{p.design_orders?.contact_name || '—'}</strong></td>
-                      <td><span>{p.design_orders?.building_type || '—'}</span></td>
+                      <td><span>{p.design_orders?.building_type?.replace(/_/g, ' ') || '—'}</span></td>
                       <td><span>{(p.design_orders?.status || '—').replace(/_/g, ' ')}</span></td>
+                      <td><span>{p.payment_type || '—'}</span></td>
                       <td><strong>₹{(p.amount_inr || 0).toLocaleString('en-IN')}</strong></td>
                       <td>
                         <span className={`admin-status ${p.payment_status === 'paid' ? 'paid' : p.payment_status === 'partial' ? 'partial' : 'pending'}`}>
                           {p.payment_status}
                         </span>
                       </td>
-                      <td><span>{new Date(p.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span></td>
+                      <td><span>{new Date(p.paid_at || p.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span></td>
                     </tr>
                   ))}
                 </tbody>
