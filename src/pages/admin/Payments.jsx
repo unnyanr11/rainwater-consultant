@@ -15,7 +15,7 @@ export default function AdminPayments() {
     async function load() {
       const { data } = await supabase
         .from('order_payments')
-        .select('id, amount, status, created_at, design_orders(client_name, project_type, status)')
+        .select('id, amount_inr, payment_status, payment_type, paid_at, created_at, design_orders(contact_name, building_type, city, status)')
         .order('created_at', { ascending: false })
       setPayments(data || [])
       setLoading(false)
@@ -23,21 +23,20 @@ export default function AdminPayments() {
     load()
   }, [])
 
-  const totalCollected = payments.filter(p => p.status === 'paid').reduce((s, p) => s + (p.amount || 0), 0)
-  const totalPending = payments.filter(p => p.status === 'pending').reduce((s, p) => s + (p.amount || 0), 0)
-  const totalPartial = payments.filter(p => p.status === 'partial').reduce((s, p) => s + (p.amount || 0), 0)
+  const totalCollected = payments.filter(p => p.payment_status === 'paid').reduce((s, p) => s + (p.amount_inr || 0), 0)
+  const totalPending = payments.filter(p => p.payment_status === 'pending').reduce((s, p) => s + (p.amount_inr || 0), 0)
+  const totalPartial = payments.filter(p => p.payment_status === 'partial').reduce((s, p) => s + (p.amount_inr || 0), 0)
   const fmt = (n) => n >= 100000 ? `₹${(n / 100000).toFixed(2)}L` : `₹${(n / 1000).toFixed(1)}K`
 
   const stats = [
-    { label: 'Total collected', value: fmt(totalCollected), sub: `${payments.filter(p => p.status === 'paid').length} payments`, trend: 8 },
-    { label: 'Pending recovery', value: fmt(totalPending), sub: `${payments.filter(p => p.status === 'pending').length} accounts` },
-    { label: 'Partial payments', value: fmt(totalPartial), sub: `${payments.filter(p => p.status === 'partial').length} accounts` },
-    { label: 'Collection ratio', value: payments.length ? `${Math.round((payments.filter(p => p.status === 'paid').length / payments.length) * 100)}%` : '—', sub: 'Paid / total', trend: 5 },
+    { label: 'Total collected', value: fmt(totalCollected), sub: `${payments.filter(p => p.payment_status === 'paid').length} payments`, trend: 8 },
+    { label: 'Pending recovery', value: fmt(totalPending), sub: `${payments.filter(p => p.payment_status === 'pending').length} accounts` },
+    { label: 'Partial payments', value: fmt(totalPartial), sub: `${payments.filter(p => p.payment_status === 'partial').length} accounts` },
+    { label: 'Collection ratio', value: payments.length ? `${Math.round((payments.filter(p => p.payment_status === 'paid').length / payments.length) * 100)}%` : '—', sub: 'Paid / total', trend: 5 },
   ]
 
-  const filtered = filter === 'all' ? payments : payments.filter(p => p.status === filter)
-
-  const collectionPct = payments.length ? (payments.filter(p => p.status === 'paid').length / payments.length) * 100 : 0
+  const filtered = filter === 'all' ? payments : payments.filter(p => p.payment_status === filter)
+  const collectionPct = payments.length ? (payments.filter(p => p.payment_status === 'paid').length / payments.length) * 100 : 0
 
   if (loading) return (
     <div className="admin-shell">
@@ -63,7 +62,6 @@ export default function AdminPayments() {
 
           <AdminStatRow stats={stats} />
 
-          {/* Collection progress bar */}
           <article className="admin-card admin-panel admin-stagger-in">
             <div className="admin-section-head">
               <div><h3>Collection health</h3><p>Breakdown by payment status.</p></div>
@@ -73,9 +71,9 @@ export default function AdminPayments() {
             </div>
             <div className="admin-health-bars">
               {[
-                { label: 'Paid', count: payments.filter(p => p.status === 'paid').length, cls: 'paid', pct: collectionPct },
-                { label: 'Partial', count: payments.filter(p => p.status === 'partial').length, cls: 'partial', pct: payments.length ? (payments.filter(p => p.status === 'partial').length / payments.length) * 100 : 0 },
-                { label: 'Pending', count: payments.filter(p => p.status === 'pending').length, cls: 'pending', pct: payments.length ? (payments.filter(p => p.status === 'pending').length / payments.length) * 100 : 0 },
+                { label: 'Paid', count: payments.filter(p => p.payment_status === 'paid').length, cls: 'paid', pct: collectionPct },
+                { label: 'Partial', count: payments.filter(p => p.payment_status === 'partial').length, cls: 'partial', pct: payments.length ? (payments.filter(p => p.payment_status === 'partial').length / payments.length) * 100 : 0 },
+                { label: 'Pending', count: payments.filter(p => p.payment_status === 'pending').length, cls: 'pending', pct: payments.length ? (payments.filter(p => p.payment_status === 'pending').length / payments.length) * 100 : 0 },
               ].map((b, i) => (
                 <div key={i} className="admin-health-bar-row">
                   <div className="admin-health-label">
@@ -90,7 +88,6 @@ export default function AdminPayments() {
             </div>
           </article>
 
-          {/* Filter tabs */}
           <div className="admin-filter-tabs">
             {['all', 'paid', 'partial', 'pending'].map(f => (
               <button
@@ -100,13 +97,12 @@ export default function AdminPayments() {
               >
                 {f.charAt(0).toUpperCase() + f.slice(1)}
                 <span className="admin-filter-count">
-                  {f === 'all' ? payments.length : payments.filter(p => p.status === f).length}
+                  {f === 'all' ? payments.length : payments.filter(p => p.payment_status === f).length}
                 </span>
               </button>
             ))}
           </div>
 
-          {/* Payments table */}
           <article className="admin-card admin-table-card admin-stagger-in">
             <div className="admin-section-head">
               <div><h3>Payment register</h3><p>{filtered.length} records</p></div>
@@ -120,6 +116,7 @@ export default function AdminPayments() {
                     <th>Client</th>
                     <th>Project</th>
                     <th>Work stage</th>
+                    <th>Type</th>
                     <th>Amount</th>
                     <th>Status</th>
                     <th>Date</th>
@@ -128,16 +125,17 @@ export default function AdminPayments() {
                 <tbody>
                   {filtered.map((p, i) => (
                     <tr key={p.id} className="admin-table-row" style={{ '--row-delay': `${i * 40}ms` }}>
-                      <td><strong>{p.design_orders?.client_name || '—'}</strong></td>
-                      <td><span>{p.design_orders?.project_type || '—'}</span></td>
+                      <td><strong>{p.design_orders?.contact_name || '—'}</strong></td>
+                      <td><span>{p.design_orders?.building_type?.replace(/_/g, ' ') || '—'}</span></td>
                       <td><span>{(p.design_orders?.status || '—').replace(/_/g, ' ')}</span></td>
-                      <td><strong>₹{(p.amount || 0).toLocaleString('en-IN')}</strong></td>
+                      <td><span>{p.payment_type || '—'}</span></td>
+                      <td><strong>₹{(p.amount_inr || 0).toLocaleString('en-IN')}</strong></td>
                       <td>
-                        <span className={`admin-status ${p.status === 'paid' ? 'paid' : p.status === 'partial' ? 'partial' : 'pending'}`}>
-                          {p.status}
+                        <span className={`admin-status ${p.payment_status === 'paid' ? 'paid' : p.payment_status === 'partial' ? 'partial' : 'pending'}`}>
+                          {p.payment_status}
                         </span>
                       </td>
-                      <td><span>{new Date(p.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span></td>
+                      <td><span>{new Date(p.paid_at || p.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span></td>
                     </tr>
                   ))}
                 </tbody>

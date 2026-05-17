@@ -13,8 +13,8 @@ export default function AdminReports() {
   useEffect(() => {
     async function load() {
       const [oRes, pRes] = await Promise.all([
-        supabase.from('design_orders').select('id, status, created_at, project_type'),
-        supabase.from('order_payments').select('id, amount, status, created_at'),
+        supabase.from('design_orders').select('id, status, created_at, building_type'),
+        supabase.from('order_payments').select('id, amount_inr, payment_status, paid_at, created_at'),
       ])
       setOrders(oRes.data || [])
       setPayments(pRes.data || [])
@@ -23,35 +23,29 @@ export default function AdminReports() {
     load()
   }, [])
 
-  const totalRevenue = payments.filter(p => p.status === 'paid').reduce((s, p) => s + (p.amount || 0), 0)
+  const totalRevenue = payments.filter(p => p.payment_status === 'paid').reduce((s, p) => s + (p.amount_inr || 0), 0)
   const fmt = (n) => n >= 100000 ? `₹${(n / 100000).toFixed(2)}L` : `₹${(n / 1000).toFixed(1)}K`
 
-  // Monthly revenue (last 6 months)
   const now = new Date()
   const months = Array.from({ length: 6 }, (_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1)
-    return {
-      label: d.toLocaleDateString('en-IN', { month: 'short' }),
-      year: d.getFullYear(),
-      month: d.getMonth(),
-    }
+    return { label: d.toLocaleDateString('en-IN', { month: 'short' }), year: d.getFullYear(), month: d.getMonth() }
   })
 
   const monthlyRevenue = months.map(m => ({
     ...m,
     amount: payments
       .filter(p => {
-        const d = new Date(p.created_at)
-        return p.status === 'paid' && d.getMonth() === m.month && d.getFullYear() === m.year
+        const d = new Date(p.paid_at || p.created_at)
+        return p.payment_status === 'paid' && d.getMonth() === m.month && d.getFullYear() === m.year
       })
-      .reduce((s, p) => s + (p.amount || 0), 0),
+      .reduce((s, p) => s + (p.amount_inr || 0), 0),
   }))
 
   const maxMonthly = Math.max(...monthlyRevenue.map(m => m.amount), 1)
 
-  // Project type distribution
   const typeMap = {}
-  orders.forEach(o => { typeMap[o.project_type || 'Other'] = (typeMap[o.project_type || 'Other'] || 0) + 1 })
+  orders.forEach(o => { typeMap[o.building_type?.replace(/_/g, ' ') || 'Other'] = (typeMap[o.building_type?.replace(/_/g, ' ') || 'Other'] || 0) + 1 })
   const typeData = Object.entries(typeMap).sort((a, b) => b[1] - a[1]).slice(0, 5)
 
   const stats = [
@@ -83,7 +77,6 @@ export default function AdminReports() {
           <AdminStatRow stats={stats} />
 
           <div className="admin-hero-grid">
-            {/* Monthly revenue chart */}
             <article className="admin-card admin-panel admin-stagger-in">
               <div className="admin-section-head">
                 <div><h3>Monthly revenue</h3><p>Last 6 months collection trend.</p></div>
@@ -94,13 +87,7 @@ export default function AdminReports() {
                   <div key={i} className="admin-bar-chart-col">
                     <span className="admin-bar-chart-value">{m.amount > 0 ? fmt(m.amount) : '—'}</span>
                     <div className="admin-bar-chart-bar">
-                      <div
-                        className="admin-bar-chart-fill"
-                        style={{
-                          height: `${(m.amount / maxMonthly) * 100}%`,
-                          '--bar-delay': `${i * 80}ms`,
-                        }}
-                      />
+                      <div className="admin-bar-chart-fill" style={{ height: `${(m.amount / maxMonthly) * 100}%`, '--bar-delay': `${i * 80}ms` }} />
                     </div>
                     <span className="admin-bar-chart-label">{m.label}</span>
                   </div>
@@ -108,37 +95,33 @@ export default function AdminReports() {
               </div>
             </article>
 
-            {/* Project type breakdown */}
             <article className="admin-card admin-panel admin-stagger-in">
               <div className="admin-section-head">
-                <div><h3>Project distribution</h3><p>By type, all time.</p></div>
+                <div><h3>Project distribution</h3><p>By building type, all time.</p></div>
               </div>
               <div className="admin-donut-container">
                 {typeData.length === 0 ? (
                   <p style={{ color: 'var(--color-text-faint)', fontSize: 'var(--text-sm)' }}>No data yet.</p>
                 ) : (
-                  <>
-                    <div className="admin-type-list">
-                      {typeData.map(([type, count], i) => (
-                        <div key={i} className="admin-type-row">
-                          <div className="admin-type-info">
-                            <span className={`admin-type-dot color-${i}`} />
-                            <span>{type}</span>
-                          </div>
-                          <div className="admin-bar" style={{ flex: 1, maxWidth: '60%' }}>
-                            <span style={{ width: `${(count / orders.length) * 100}%` }} />
-                          </div>
-                          <strong>{count}</strong>
+                  <div className="admin-type-list">
+                    {typeData.map(([type, count], i) => (
+                      <div key={i} className="admin-type-row">
+                        <div className="admin-type-info">
+                          <span className={`admin-type-dot color-${i}`} />
+                          <span>{type}</span>
                         </div>
-                      ))}
-                    </div>
-                  </>
+                        <div className="admin-bar" style={{ flex: 1, maxWidth: '60%' }}>
+                          <span style={{ width: `${(count / orders.length) * 100}%` }} />
+                        </div>
+                        <strong>{count}</strong>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             </article>
           </div>
 
-          {/* Status pipeline overview */}
           <article className="admin-card admin-panel admin-stagger-in">
             <div className="admin-section-head">
               <div><h3>Pipeline overview</h3><p>Order counts at each stage.</p></div>

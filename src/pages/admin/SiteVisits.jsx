@@ -29,7 +29,7 @@ export default function AdminVisits() {
     async function load() {
       const { data } = await supabase
         .from('design_orders')
-        .select('id, client_name, project_type, status, notes, created_at')
+        .select('id, contact_name, contact_phone, building_type, city, status, visit_note, visit_date, created_at')
         .in('status', ['pending', 'visit_scheduled', 'visit_complete', 'measurement_done'])
         .order('created_at', { ascending: false })
       setVisits(data || [])
@@ -75,7 +75,6 @@ export default function AdminVisits() {
 
           <AdminStatRow stats={stats} />
 
-          {/* Filter tabs */}
           <div className="admin-filter-tabs">
             {['all', 'pending', 'visit_scheduled', 'visit_complete', 'measurement_done'].map(f => (
               <button
@@ -91,7 +90,6 @@ export default function AdminVisits() {
             ))}
           </div>
 
-          {/* Visits table */}
           <article className="admin-card admin-table-card admin-stagger-in">
             <div className="admin-section-head">
               <div><h3>Visit records</h3><p>{filtered.length} entries</p></div>
@@ -108,22 +106,27 @@ export default function AdminVisits() {
                   <tr>
                     <th>Client</th>
                     <th>Project type</th>
+                    <th>City</th>
                     <th>Status</th>
-                    <th>Notes</th>
+                    <th>Visit date</th>
                     <th>Created</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((v, i) => (
                     <tr key={v.id} className="admin-table-row" style={{ '--row-delay': `${i * 40}ms` }}>
-                      <td><strong>{v.client_name || '—'}</strong></td>
-                      <td><span>{v.project_type || '—'}</span></td>
+                      <td>
+                        <strong>{v.contact_name || '—'}</strong>
+                        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)' }}>{v.contact_phone || ''}</span>
+                      </td>
+                      <td><span>{v.building_type?.replace(/_/g, ' ') || '—'}</span></td>
+                      <td><span>{v.city || '—'}</span></td>
                       <td>
                         <span className={`admin-status ${STATUS_COLORS[v.status] || 'pending'}`}>
                           {STATUS_LABELS[v.status] || v.status}
                         </span>
                       </td>
-                      <td><span style={{ maxWidth: '24ch', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.notes || '—'}</span></td>
+                      <td><span>{v.visit_date ? new Date(v.visit_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</span></td>
                       <td><span>{new Date(v.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span></td>
                     </tr>
                   ))}
@@ -132,15 +135,14 @@ export default function AdminVisits() {
             )}
           </article>
 
-          {/* Visit completion ring */}
           <div className="admin-hero-grid">
             <article className="admin-card admin-panel admin-stagger-in">
               <div className="admin-section-head"><div><h3>Conversion funnel</h3><p>Lead to field completion rates.</p></div></div>
               <div className="admin-funnel">
                 {[
-                  { label: 'Leads', count: pending, total: visits.length, color: '#d8edf2' },
-                  { label: 'Scheduled', count: scheduled, total: visits.length, color: '#f8ead8' },
-                  { label: 'Completed', count: completed, total: visits.length, color: '#daefdf' },
+                  { label: 'Leads', count: pending, color: '#d8edf2' },
+                  { label: 'Scheduled', count: scheduled, color: '#f8ead8' },
+                  { label: 'Completed', count: completed, color: '#daefdf' },
                 ].map((step, i) => (
                   <div key={i} className="admin-funnel-step">
                     <div className="admin-funnel-label">
@@ -148,7 +150,7 @@ export default function AdminVisits() {
                       <strong>{step.count}</strong>
                     </div>
                     <div className="admin-bar">
-                      <span style={{ width: `${visits.length ? (step.count / visits.length) * 100 : 0}%`, background: step.color.replace('f2', 'a0').replace('d8', '80') }} />
+                      <span style={{ width: `${visits.length ? (step.count / visits.length) * 100 : 0}%` }} />
                     </div>
                   </div>
                 ))}

@@ -15,13 +15,14 @@ export default function AdminCustomers() {
     async function load() {
       const { data } = await supabase
         .from('design_orders')
-        .select('id, client_name, project_type, status, notes, created_at')
+        .select('id, contact_name, contact_email, contact_phone, building_type, status, message, created_at')
         .order('created_at', { ascending: false })
-      // Deduplicate by client_name
+      // Deduplicate by contact_email (more reliable than name)
       const seen = new Set()
       const unique = (data || []).filter(d => {
-        if (!d.client_name || seen.has(d.client_name)) return false
-        seen.add(d.client_name)
+        const key = d.contact_email || d.contact_name
+        if (!key || seen.has(key)) return false
+        seen.add(key)
         return true
       })
       setCustomers(unique)
@@ -30,7 +31,7 @@ export default function AdminCustomers() {
     load()
   }, [])
 
-  const active = customers.filter(c => !['completed'].includes(c.status)).length
+  const active = customers.filter(c => !['completed', 'cancelled'].includes(c.status)).length
   const completed = customers.filter(c => c.status === 'completed').length
 
   const stats = [
@@ -41,10 +42,18 @@ export default function AdminCustomers() {
   ]
 
   const filtered = search
-    ? customers.filter(c => c.client_name?.toLowerCase().includes(search.toLowerCase()) || c.project_type?.toLowerCase().includes(search.toLowerCase()))
+    ? customers.filter(c =>
+        c.contact_name?.toLowerCase().includes(search.toLowerCase()) ||
+        c.contact_email?.toLowerCase().includes(search.toLowerCase()) ||
+        c.building_type?.toLowerCase().includes(search.toLowerCase())
+      )
     : customers
 
-  const STATUS_COLOR = { pending: 'pending', visit_scheduled: 'visit', visit_complete: 'partial', measurement_done: 'lead', drawing_in_progress: 'visit', drawing_review: 'partial', drawing_ready: 'design', completed: 'paid' }
+  const STATUS_COLOR = {
+    pending: 'pending', visit_scheduled: 'visit', visit_complete: 'partial',
+    measurement_done: 'lead', drawing_in_progress: 'visit', drawing_review: 'partial',
+    drawing_ready: 'design', completed: 'paid', cancelled: 'pending',
+  }
 
   if (loading) return (
     <div className="admin-shell"><AdminSidebar /><main className="admin-main"><div className="admin-skeleton-page"><div className="admin-skeleton admin-skeleton-heading" /><div className="admin-skeleton admin-skeleton-block" /></div></main></div>
@@ -67,12 +76,11 @@ export default function AdminCustomers() {
 
           <AdminStatRow stats={stats} />
 
-          {/* Search bar */}
           <div className="admin-search-bar">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
             <input
               type="text"
-              placeholder="Search by client name or project type…"
+              placeholder="Search by name, email or project type…"
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="admin-search-input"
@@ -80,7 +88,6 @@ export default function AdminCustomers() {
             {search && <button className="admin-search-clear" onClick={() => setSearch('')}>✕</button>}
           </div>
 
-          {/* Customer grid */}
           {filtered.length === 0 ? (
             <AdminEmptyState icon="👤" title="No clients found" body={search ? 'Try a different name or project type.' : 'No customers yet.'} />
           ) : (
@@ -88,11 +95,12 @@ export default function AdminCustomers() {
               {filtered.map((c, i) => (
                 <div key={c.id} className="admin-customer-card" style={{ '--card-delay': `${i * 50}ms` }}>
                   <div className="admin-customer-avatar">
-                    {(c.client_name || 'C').charAt(0).toUpperCase()}
+                    {(c.contact_name || 'C').charAt(0).toUpperCase()}
                   </div>
                   <div className="admin-customer-info">
-                    <strong>{c.client_name || 'Unknown'}</strong>
-                    <span>{c.project_type || '—'}</span>
+                    <strong>{c.contact_name || 'Unknown'}</strong>
+                    <span>{c.building_type?.replace(/_/g, ' ') || '—'}</span>
+                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)' }}>{c.contact_phone || c.contact_email || ''}</span>
                   </div>
                   <span className={`admin-status ${STATUS_COLOR[c.status] || 'pending'}`}>
                     {(c.status || '').replace(/_/g, ' ')}

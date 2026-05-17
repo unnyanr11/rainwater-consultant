@@ -21,9 +21,9 @@ export default function AdminDashboard() {
     async function load() {
       const [ordersRes, paymentsRes, visitsRes, lanesRes] = await Promise.all([
         supabase.from('design_orders').select('id, status, created_at'),
-        supabase.from('order_payments').select('id, amount, status, created_at, design_orders(client_name, project_type, status)'),
+        supabase.from('order_payments').select('id, amount_inr, payment_status, created_at, design_orders(contact_name, building_type, status)'),
         supabase.from('design_orders').select('id, status').in('status', ['visit_scheduled', 'visit_complete', 'measurement_done']),
-        supabase.from('design_orders').select('id, client_name, project_type, status, notes').limit(12),
+        supabase.from('design_orders').select('id, contact_name, building_type, status, message').limit(12),
       ])
 
       const orders = ordersRes.data || []
@@ -31,16 +31,16 @@ export default function AdminDashboard() {
       const visits = visitsRes.data || []
       const lanes = lanesRes.data || []
 
-      const totalCollected = pays.filter(p => p.status === 'paid').reduce((s, p) => s + (p.amount || 0), 0)
+      const totalCollected = pays.filter(p => p.payment_status === 'paid').reduce((s, p) => s + (p.amount_inr || 0), 0)
       const visitsPending = orders.filter(o => o.status === 'visit_scheduled').length
       const drawingsBlocked = orders.filter(o => o.status === 'measurement_done').length
 
-      setStats({ totalCollected, visitsPending, drawingsBlocked, totalPaymentsCount: pays.filter(p => p.status === 'paid').length })
+      setStats({ totalCollected, visitsPending, drawingsBlocked, totalPaymentsCount: pays.filter(p => p.payment_status === 'paid').length })
 
       const leads = orders.filter(o => o.status === 'pending').length
       const visitsCount = visits.length
       const designs = orders.filter(o => ['drawing_in_progress', 'drawing_review', 'drawing_ready'].includes(o.status)).length
-      const pendingAmount = pays.filter(p => p.status !== 'paid').reduce((s, p) => s + (p.amount || 0), 0)
+      const pendingAmount = pays.filter(p => p.payment_status !== 'paid').reduce((s, p) => s + (p.amount_inr || 0), 0)
       setPipeline([
         { label: 'Leads', value: leads, tag: 'lead', desc: 'Fresh consultation requests needing qualification.' },
         { label: 'Visits', value: visitsCount, tag: 'visit', desc: 'Physical inspections mapped by urgency and distance.' },
@@ -49,12 +49,12 @@ export default function AdminDashboard() {
       ])
 
       const recentPays = pays.slice(0, 4).map(p => ({
-        client: p.design_orders?.client_name || 'Unknown',
-        project: p.design_orders?.project_type || '',
+        client: p.design_orders?.contact_name || 'Unknown',
+        project: p.design_orders?.building_type || '',
         stage: p.design_orders?.status || '',
-        paymentStatus: p.status,
-        amount: p.amount,
-        action: p.status === 'paid' ? 'Move file to implementation follow-up' : 'Follow up on pending payment',
+        paymentStatus: p.payment_status,
+        amount: p.amount_inr,
+        action: p.payment_status === 'paid' ? 'Move file to implementation follow-up' : 'Follow up on pending payment',
       }))
       setPayments(recentPays)
 
@@ -73,9 +73,8 @@ export default function AdminDashboard() {
       })
 
       const total = pays.length || 1
-      const paid = pays.filter(p => p.status === 'paid').length
-   
-      const delayed = pays.filter(p => p.status === 'pending').length
+      const paid = pays.filter(p => p.payment_status === 'paid').length
+      const delayed = pays.filter(p => p.payment_status === 'pending').length
       const unlocked = orders.filter(o => o.status === 'drawing_ready').length
       setRevenueMetrics([
         { label: 'Collection ratio', value: `${Math.round((paid / total) * 100)}%`, pct: (paid / total) * 100 },
@@ -90,7 +89,7 @@ export default function AdminDashboard() {
       setWorkLanes({ field: fieldItems, design: designItems, close: closeItems })
 
       setTimeline([
-        { time: 'Today', title: `${pays.filter(p => p.status === 'pending').length} payment reminders pending`, body: 'Clients with unpaid milestones need follow-up.' },
+        { time: 'Today', title: `${pays.filter(p => p.payment_status === 'pending').length} payment reminders pending`, body: 'Clients with unpaid milestones need follow-up.' },
         { time: 'Recent', title: `${orders.filter(o => o.status === 'measurement_done').length} measurements ready for drafting`, body: 'Field dimensions received, drawings can move to draft stage.' },
         { time: 'This week', title: `${orders.filter(o => o.status === 'completed').length} consultations closed`, body: 'Files archived with full payment trails.' },
       ])
@@ -175,7 +174,7 @@ export default function AdminDashboard() {
                   )}
                   {payments.map((p, i) => (
                     <tr key={i}>
-                      <td><strong>{p.client}</strong><span>{p.project}</span></td>
+                      <td><strong>{p.client}</strong><span>{p.project?.replace(/_/g, ' ')}</span></td>
                       <td><span>{p.stage?.replace(/_/g, ' ')}</span></td>
                       <td><span className={`admin-status ${p.paymentStatus === 'paid' ? 'paid' : p.paymentStatus === 'partial' ? 'partial' : 'pending'}`}>{p.paymentStatus === 'paid' ? `₹${p.amount?.toLocaleString()} paid` : p.paymentStatus === 'partial' ? `₹${p.amount?.toLocaleString()} partial` : 'Pending'}</span></td>
                       <td><span>{p.action}</span></td>

@@ -25,13 +25,13 @@ const STAGE_LABELS = {
 export default function AdminDesigns() {
   const [designs, setDesigns] = useState([])
   const [loading, setLoading] = useState(true)
-  const [view, setView] = useState('board') // 'board' | 'list'
+  const [view, setView] = useState('board')
 
   useEffect(() => {
     async function load() {
       const { data } = await supabase
         .from('design_orders')
-        .select('id, client_name, project_type, status, notes, created_at')
+        .select('id, contact_name, building_type, city, status, admin_notes, created_at')
         .in('status', ['measurement_done', 'drawing_in_progress', 'drawing_review', 'drawing_ready', 'completed'])
         .order('created_at', { ascending: false })
       setDesigns(data || [])
@@ -88,9 +88,10 @@ export default function AdminDesigns() {
                     )}
                     {byStage(status).map((d, i) => (
                       <div key={d.id} className="admin-design-card" style={{ '--card-delay': `${i * 60}ms` }}>
-                        <strong>{d.client_name || 'Client'}</strong>
-                        <span>{d.project_type || '—'}</span>
-                        {d.notes && <p className="admin-design-note">{d.notes}</p>}
+                        <strong>{d.contact_name || 'Client'}</strong>
+                        <span>{d.building_type?.replace(/_/g, ' ') || '—'}</span>
+                        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)' }}>{d.city || ''}</span>
+                        {d.admin_notes && <p className="admin-design-note">{d.admin_notes}</p>}
                         <small>{new Date(d.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</small>
                       </div>
                     ))}
@@ -104,14 +105,15 @@ export default function AdminDesigns() {
                 <AdminEmptyState icon="✏️" title="No designs in queue" body="Start by adding a measurement-done order." />
               ) : (
                 <table className="admin-table">
-                  <thead><tr><th>Client</th><th>Project</th><th>Stage</th><th>Notes</th><th>Date</th></tr></thead>
+                  <thead><tr><th>Client</th><th>Project</th><th>City</th><th>Stage</th><th>Admin notes</th><th>Date</th></tr></thead>
                   <tbody>
                     {designs.map((d, i) => (
                       <tr key={d.id} className="admin-table-row" style={{ '--row-delay': `${i * 40}ms` }}>
-                        <td><strong>{d.client_name || '—'}</strong></td>
-                        <td><span>{d.project_type || '—'}</span></td>
+                        <td><strong>{d.contact_name || '—'}</strong></td>
+                        <td><span>{d.building_type?.replace(/_/g, ' ') || '—'}</span></td>
+                        <td><span>{d.city || '—'}</span></td>
                         <td><span className={`admin-status ${STAGE_COLORS[d.status] || 'pending'}`}>{STAGE_LABELS[d.status] || d.status}</span></td>
-                        <td><span style={{ maxWidth: '22ch', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.notes || '—'}</span></td>
+                        <td><span style={{ maxWidth: '22ch', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.admin_notes || '—'}</span></td>
                         <td><span>{new Date(d.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span></td>
                       </tr>
                     ))}
