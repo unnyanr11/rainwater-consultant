@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CloudRain, Droplets, ArrowRight, RotateCcw, Loader2 } from 'lucide-react'
 
@@ -72,6 +72,9 @@ const labelStyle = {
 
 export default function Calculator() {
   const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const isInsideClientDashboard = pathname.startsWith('/client')
+
   const [selectedCity, setSelectedCity] = useState(null)
   const { data: roofTypes,     loading: loadingRoofs } = useRoofTypes()
   const [form,             setForm]         = useState({ roofArea: '', roofTypeId: '', areaUnit: 'sqm' })
@@ -144,9 +147,9 @@ export default function Calculator() {
         .unit-toggle button:last-child  { border-radius:0 var(--radius-md) var(--radius-md) 0; }
       `}</style>
 
-      <Navbar />
+      {!isInsideClientDashboard && <Navbar />}
 
-      <div style={{ paddingTop: '64px' }}>
+      <div style={{ paddingTop: isInsideClientDashboard ? '0' : '64px' }}>
 
         {/* Hero */}
         <section style={{
