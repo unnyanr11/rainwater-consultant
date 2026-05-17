@@ -1,6 +1,7 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useRef } from 'react'
 import { useAuth } from '../../context/AuthContext'
+import ThemeToggle from '../ui/ThemeToggle'
 
 const NAV = [
   {
@@ -110,10 +111,11 @@ export default function AdminSidebar() {
             <path d="M16 12 C16 12 11 18 11 22 a5 5 0 0 0 10 0 C21 18 16 12 16 12Z" fill="white" opacity="0.4"/>
           </svg>
         </div>
-        <div className="admin-brand-text">
+        <div className="admin-brand-text" style={{ flex: 1 }}>
           <small>Ops Console</small>
           <h1>Field-first<br />Admin</h1>
         </div>
+        <ThemeToggle size="sm" />
       </div>
 
       <nav className="admin-nav" ref={navRef}>

@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import ThemeToggle from '../../components/ui/ThemeToggle'
 import {
   LayoutDashboard, ClipboardList, CreditCard,
   UserCircle, LogOut, Droplets, Calculator, BookOpen
@@ -36,11 +37,14 @@ export default function ClientDashboard() {
       }}>
         {/* Logo */}
         <div style={{ padding: '1.5rem 1.25rem', borderBottom: '1px solid var(--color-border)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <Droplets size={22} style={{ color: 'var(--color-primary)' }} />
-            <span style={{ fontWeight: 800, fontSize: 'var(--text-base)', color: 'var(--color-text)' }}>RainHarvest</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <Droplets size={22} style={{ color: 'var(--color-primary)' }} />
+              <span style={{ fontWeight: 800, fontSize: 'var(--text-base)', color: 'var(--color-text)' }}>RainHarvest</span>
+            </div>
+            <ThemeToggle size="sm" />
           </div>
-          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)', marginTop: 2 }}>Client Portal</div>
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)', marginTop: 4 }}>Client Portal</div>
         </div>
 
         {/* User pill */}
