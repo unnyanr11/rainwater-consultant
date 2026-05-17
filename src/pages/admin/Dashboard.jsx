@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
+import '../../styles/admin.css'
 import AdminSidebar from '../../components/admin/AdminSidebar'
 import AdminMetricChip from '../../components/admin/AdminMetricChip'
 import AdminPipelineStep from '../../components/admin/AdminPipelineStep'
