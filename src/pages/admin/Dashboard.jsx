@@ -5,6 +5,7 @@ import AdminMetricChip from '../../components/admin/AdminMetricChip'
 import AdminPipelineStep from '../../components/admin/AdminPipelineStep'
 import AdminKanbanCard from '../../components/admin/AdminKanbanCard'
 import PageTransition from '../../components/motion/PageTransition'
+import '../../styles/admin.css'
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null)
@@ -73,6 +74,7 @@ export default function AdminDashboard() {
 
       const total = pays.length || 1
       const paid = pays.filter(p => p.status === 'paid').length
+   
       const delayed = pays.filter(p => p.status === 'pending').length
       const unlocked = orders.filter(o => o.status === 'drawing_ready').length
       setRevenueMetrics([
