@@ -1,48 +1,47 @@
-import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
 import { Sun, Moon } from 'lucide-react'
+import { useTheme } from '../../context/ThemeContext'
 
-export default function ThemeToggle() {
-  const [dark, setDark] = useState(false)
+export default function ThemeToggle({ size = 'md' }) {
+  const { theme, toggle } = useTheme()
+  const isDark = theme === 'dark'
 
-  useEffect(() => {
-    const current = document.documentElement.getAttribute('data-theme')
-    setDark(current === 'dark')
-  }, [])
-
-  const toggle = () => {
-    const next = dark ? 'light' : 'dark'
-    document.documentElement.setAttribute('data-theme', next)
-    setDark(!dark)
-  }
+  const dim = size === 'sm' ? 14 : 16
+  const pad = size === 'sm' ? '6px 8px' : '8px 10px'
 
   return (
-    <motion.button
+    <button
       onClick={toggle}
-      whileTap={{ scale: 0.88 }}
-      aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+      aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
+      title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
       style={{
-        width: 40,
-        height: 40,
-        borderRadius: 'var(--radius-full)',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
+        gap: '6px',
+        padding: pad,
+        borderRadius: 'var(--radius-full)',
+        border: '1.5px solid var(--color-border)',
         background: 'var(--color-surface-offset)',
-        border: '1px solid var(--color-border)',
         color: 'var(--color-text-muted)',
-        transition: 'background var(--transition-fast), color var(--transition-fast)',
+        cursor: 'pointer',
+        fontSize: 'var(--text-xs)',
+        fontWeight: 600,
+        transition: 'all 180ms cubic-bezier(0.16,1,0.3,1)',
+        flexShrink: 0,
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.background = 'var(--color-surface-dynamic)'
+        e.currentTarget.style.color = 'var(--color-text)'
+        e.currentTarget.style.borderColor = 'var(--color-text-faint)'
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.background = 'var(--color-surface-offset)'
+        e.currentTarget.style.color = 'var(--color-text-muted)'
+        e.currentTarget.style.borderColor = 'var(--color-border)'
       }}
     >
-      <motion.div
-        key={dark ? 'moon' : 'sun'}
-        initial={{ rotate: -30, opacity: 0, scale: 0.7 }}
-        animate={{ rotate: 0, opacity: 1, scale: 1 }}
-        exit={{ rotate: 30, opacity: 0, scale: 0.7 }}
-        transition={{ duration: 0.26 }}
-      >
-        {dark ? <Sun size={17} /> : <Moon size={17} />}
-      </motion.div>
-    </motion.button>
+      {isDark
+        ? <><Sun size={dim} /><span>{size !== 'sm' && 'Light'}</span></>
+        : <><Moon size={dim} /><span>{size !== 'sm' && 'Dark'}</span></>}
+    </button>
   )
 }
