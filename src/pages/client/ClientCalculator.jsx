@@ -3,23 +3,35 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CloudRain, Droplets, ArrowRight, RotateCcw, Loader2 } from 'lucide-react'
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
 import RippleButton        from '../../../components/motion/RippleButton'
 import LiquidMeter         from '../../../components/motion/LiquidMeter'
 import RainfallTrendChart  from '../../../components/charts/RainfallTrendChart'
 import ScenarioPicker      from '../../../components/charts/ScenarioPicker'
 import CitySearchInput     from '../../calculator/CitySearchInput'
 
+<<<<<<< HEAD
 
 import { useRoofTypes }             from '../../../hooks/useRoofTypes'
 import { useCityRainfallBreakdown } from '../../../hooks/useCityRainfallBreakdown'
 
 
+=======
+import { useRoofTypes }             from '../../../hooks/useRoofTypes'
+import { useCityRainfallBreakdown } from '../../../hooks/useCityRainfallBreakdown'
+
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
 const CO2_PER_LITRE     = 0.0003
 const WATER_RATE_PER_KL = 45
 const SQFT_TO_SQM       = 0.0929
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
 function AnimatedNumber({ value, unit = '' }) {
   const [display, setDisplay] = useState(0)
   useEffect(() => {
@@ -39,7 +51,10 @@ function AnimatedNumber({ value, unit = '' }) {
 }
 
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
 const inputStyle = {
   width: '100%',
   padding: 'var(--space-3) var(--space-4)',
@@ -52,7 +67,10 @@ const inputStyle = {
   transition: 'border-color 180ms, box-shadow 180ms',
 }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
 const labelStyle = {
   display: 'block',
   fontSize: 'var(--text-xs)',
@@ -63,12 +81,18 @@ const labelStyle = {
   marginBottom: 'var(--space-2)',
 }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
 export default function ClientCalculator() {
   const navigate  = useNavigate()
   const { roofTypes, loading: roofLoading } = useRoofTypes()
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
   /* ── form state ── */
   const [form, setForm] = useState({ roofType: '', roofArea: '', unit: 'sqft' })
   const [selectedCity,     setSelectedCity]     = useState(null)
@@ -76,21 +100,30 @@ export default function ClientCalculator() {
   const [result,           setResult]           = useState(null)
   const [calculating,      setCalculating]      = useState(false)
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
   /* ── rainfall data ── */
   const {
     breakdown, annualMm,
     loading: rainfallLoading, error: rainfallError,
   } = useCityRainfallBreakdown(selectedCity?.id ?? null)
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
   /* ── set default roof type once loaded ── */
   useEffect(() => {
     if (roofTypes.length && !form.roofType)
       setForm(f => ({ ...f, roofType: roofTypes[0].id }))
   }, [roofTypes, form.roofType])
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
   /* ── calculate ── */
   const calculate = useCallback(() => {
     const raw   = parseFloat(form.roofArea)
@@ -111,7 +144,10 @@ export default function ClientCalculator() {
     setCalculating(false)
   }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
   const handleReset = () => {
     setForm({ roofType: roofTypes[0]?.id || '', roofArea: '', unit: 'sqft' })
     setSelectedCity(null)
@@ -119,7 +155,10 @@ export default function ClientCalculator() {
     setResult(null)
   }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
   const handleGetDesign = useCallback(() => {
     if (!cityDisplayName && !selectedCity && !result) return navigate('/client/request-design')
     navigate('/client/request-design', {
@@ -132,8 +171,12 @@ export default function ClientCalculator() {
         },
       },
     })
+<<<<<<< HEAD
   }, [navigate, cityDisplayName, selectedCity, result, form.roofArea, form.unit])
 
+=======
+  }, [navigate, cityDisplayName, selectedCity, result, form.roofArea])
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
 
   return (
     <>
@@ -149,10 +192,15 @@ export default function ClientCalculator() {
         .unit-toggle button:last-child  { border-radius:0 var(--radius-md) var(--radius-md) 0; }
       `}</style>
 
+<<<<<<< HEAD
 
       <div>
 
 
+=======
+      <div>
+
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
         {/* Hero */}
         <section style={{
           paddingTop:    'var(--space-8)',
@@ -184,7 +232,10 @@ export default function ClientCalculator() {
           </div>
         </section>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
         {/* ── Main content ── */}
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{
@@ -194,7 +245,10 @@ export default function ClientCalculator() {
             alignItems: 'start',
           }}>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
             {/* ─ Left: Inputs ─ */}
             <div style={{
               background: 'var(--color-surface)',
@@ -208,7 +262,10 @@ export default function ClientCalculator() {
                 Your details
               </h2>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
               {/* City */}
               <div>
                 <label style={labelStyle}>City / Location</label>
@@ -230,7 +287,10 @@ export default function ClientCalculator() {
                 )}
               </div>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
               {/* Roof type */}
               <div>
                 <label style={labelStyle}>Roof Type</label>
@@ -253,7 +313,10 @@ export default function ClientCalculator() {
                 )}
               </div>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
               {/* Roof area */}
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-2)' }}>
@@ -271,7 +334,10 @@ export default function ClientCalculator() {
                 />
               </div>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
               {/* Buttons */}
               <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
                 <RippleButton
@@ -304,7 +370,10 @@ export default function ClientCalculator() {
                 )}
               </div>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
               {/* Liquid meter */}
               {result && (
                 <div style={{ marginTop: 'var(--space-2)' }}>
@@ -313,7 +382,10 @@ export default function ClientCalculator() {
               )}
             </div>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
             {/* ─ Right: Results ─ */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
               <AnimatePresence mode="wait">
@@ -336,7 +408,10 @@ export default function ClientCalculator() {
                   </motion.div>
                 )}
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
                 {result && (
                   <motion.div
                     key="results"
@@ -346,9 +421,15 @@ export default function ClientCalculator() {
                   >
                     {/* Stat cards */}
                     {[
+<<<<<<< HEAD
                       { label: 'Annual Harvest',  value: result.litres,    unit: ' L',  color: 'var(--color-primary)', bg: '#e8f4fd' },
                       { label: 'Cost Saved/yr',   value: result.costSaved, unit: '',    color: '#1a7a3a',              bg: '#e6f7ee', prefix: '₹' },
                       { label: 'CO₂ Offset',      value: result.co2Saved,  unit: ' kg', color: '#7a5c1a',             bg: '#fdf6e3' },
+=======
+                      { label: 'Annual Harvest',  value: result.litres,   unit: ' L', color: 'var(--color-primary)',  bg: '#e8f4fd' },
+                      { label: 'Cost Saved/yr',   value: result.costSaved, unit: '',  color: '#1a7a3a',             bg: '#e6f7ee', prefix: '₹' },
+                      { label: 'CO₂ Offset',      value: result.co2Saved,  unit: ' kg', color: '#7a5c1a',           bg: '#fdf6e3' },
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
                     ].map(({ label, value, unit, color, bg, prefix = '' }) => (
                       <div key={label} style={{
                         background: bg,
@@ -363,7 +444,10 @@ export default function ClientCalculator() {
                       </div>
                     ))}
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
                     {/* CTA */}
                     <button
                       onClick={handleGetDesign}
@@ -383,13 +467,19 @@ export default function ClientCalculator() {
                 )}
               </AnimatePresence>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
               {/* Scenario picker */}
               {selectedCity && (
                 <ScenarioPicker cityId={selectedCity.id} />
               )}
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
               {/* Rainfall chart */}
               {breakdown && breakdown.length > 0 && (
                 <RainfallTrendChart data={breakdown} cityName={cityDisplayName} />

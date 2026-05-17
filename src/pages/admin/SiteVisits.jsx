@@ -8,6 +8,11 @@ import PageTransition from '../../components/motion/PageTransition'
 
 const STATUS_LABELS = {
   pending: 'Lead',
+<<<<<<< HEAD
+=======
+  reviewed: 'Reviewed',
+  quote_sent: 'Quote Sent',
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
   visit_scheduled: 'Scheduled',
   visit_complete: 'Completed',
   measurement_done: 'Measured',
@@ -15,11 +20,23 @@ const STATUS_LABELS = {
 
 const STATUS_COLORS = {
   pending: 'lead',
+<<<<<<< HEAD
+=======
+  reviewed: 'partial',
+  quote_sent: 'visit',
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
   visit_scheduled: 'visit',
   visit_complete: 'paid',
   measurement_done: 'design',
 }
 
+<<<<<<< HEAD
+=======
+// FIX: all statuses that represent pre-design field activity, including
+// 'reviewed' and 'quote_sent' which were previously silently excluded
+const VISIT_STATUSES = ['pending', 'reviewed', 'quote_sent', 'visit_scheduled', 'visit_complete', 'measurement_done']
+
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
 export default function AdminVisits() {
   const [visits, setVisits] = useState([])
   const [loading, setLoading] = useState(true)
@@ -30,7 +47,11 @@ export default function AdminVisits() {
       const { data } = await supabase
         .from('design_orders')
         .select('id, contact_name, contact_phone, building_type, city, status, visit_note, visit_date, created_at')
+<<<<<<< HEAD
         .in('status', ['pending', 'visit_scheduled', 'visit_complete', 'measurement_done'])
+=======
+        .in('status', VISIT_STATUSES)
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
         .order('created_at', { ascending: false })
       setVisits(data || [])
       setLoading(false)
@@ -41,6 +62,11 @@ export default function AdminVisits() {
   const scheduled = visits.filter(v => v.status === 'visit_scheduled').length
   const completed = visits.filter(v => v.status === 'visit_complete' || v.status === 'measurement_done').length
   const pending = visits.filter(v => v.status === 'pending').length
+<<<<<<< HEAD
+=======
+  // FIX: count reviewed + quote_sent separately so they're visible in stats
+  const inReview = visits.filter(v => v.status === 'reviewed' || v.status === 'quote_sent').length
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
 
   const filtered = filter === 'all' ? visits : visits.filter(v => v.status === filter)
 
@@ -48,7 +74,11 @@ export default function AdminVisits() {
     { label: 'Total visits', value: String(visits.length).padStart(2, '0'), sub: 'All time' },
     { label: 'Scheduled', value: String(scheduled).padStart(2, '0'), sub: 'Awaiting field', trend: 0 },
     { label: 'Completed', value: String(completed).padStart(2, '0'), sub: 'Field + measured', trend: 12 },
+<<<<<<< HEAD
     { label: 'Leads pending', value: String(pending).padStart(2, '0'), sub: 'Need qualification' },
+=======
+    { label: 'In review / quoted', value: String(inReview).padStart(2, '0'), sub: 'Reviewed or quote sent' },
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
   ]
 
   if (loading) return (
@@ -76,7 +106,11 @@ export default function AdminVisits() {
           <AdminStatRow stats={stats} />
 
           <div className="admin-filter-tabs">
+<<<<<<< HEAD
             {['all', 'pending', 'visit_scheduled', 'visit_complete', 'measurement_done'].map(f => (
+=======
+            {['all', ...VISIT_STATUSES].map(f => (
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
               <button
                 key={f}
                 className={`admin-filter-tab ${filter === f ? 'active' : ''}`}
@@ -141,6 +175,10 @@ export default function AdminVisits() {
               <div className="admin-funnel">
                 {[
                   { label: 'Leads', count: pending, color: '#d8edf2' },
+<<<<<<< HEAD
+=======
+                  { label: 'In review / quoted', count: inReview, color: '#efe3f5' },
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
                   { label: 'Scheduled', count: scheduled, color: '#f8ead8' },
                   { label: 'Completed', count: completed, color: '#daefdf' },
                 ].map((step, i) => (

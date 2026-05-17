@@ -5,7 +5,6 @@ import ProtectedRoute from './components/auth/ProtectedRoute'
 import Home                from './pages/public/Home'
 import Services            from './pages/public/Services'
 import HowItWorksPage      from './pages/public/HowItWorks'
-import Pricing             from './pages/public/Pricing'
 import Calculator          from './pages/calculator/Calculator'
 import ProfessionalDesign  from './pages/professional/ProfessionalDesign'
 import SignUp              from './pages/auth/SignUp'
@@ -36,7 +35,10 @@ export default function App() {
           <Route path="/"                          element={<Home />} />
           <Route path="/services"                  element={<Services />} />
           <Route path="/how-it-works"              element={<HowItWorksPage />} />
+<<<<<<< HEAD
           <Route path="/pricing"                   element={<Pricing />} />
+=======
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
           <Route path="/calculator"                element={<Calculator />} />
           <Route path="/get-professional-design"   element={<ProfessionalDesign />} />
           <Route path="/signup"                    element={<SignUp />} />

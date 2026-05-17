@@ -14,7 +14,11 @@ export default function AdminReports() {
     async function load() {
       const [oRes, pRes] = await Promise.all([
         supabase.from('design_orders').select('id, status, created_at, building_type'),
+<<<<<<< HEAD
         supabase.from('order_payments').select('id, amount_inr, payment_status, paid_at, created_at'),
+=======
+        supabase.from('order_payments').select('id, amount_inr, payment_status, created_at'),
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
       ])
       setOrders(oRes.data || [])
       setPayments(pRes.data || [])
@@ -29,14 +33,26 @@ export default function AdminReports() {
   const now = new Date()
   const months = Array.from({ length: 6 }, (_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1)
+<<<<<<< HEAD
     return { label: d.toLocaleDateString('en-IN', { month: 'short' }), year: d.getFullYear(), month: d.getMonth() }
+=======
+    return {
+      label: d.toLocaleDateString('en-IN', { month: 'short' }),
+      year: d.getFullYear(),
+      month: d.getMonth(),
+    }
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
   })
 
   const monthlyRevenue = months.map(m => ({
     ...m,
     amount: payments
       .filter(p => {
+<<<<<<< HEAD
         const d = new Date(p.paid_at || p.created_at)
+=======
+        const d = new Date(p.created_at)
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
         return p.payment_status === 'paid' && d.getMonth() === m.month && d.getFullYear() === m.year
       })
       .reduce((s, p) => s + (p.amount_inr || 0), 0),
@@ -45,7 +61,11 @@ export default function AdminReports() {
   const maxMonthly = Math.max(...monthlyRevenue.map(m => m.amount), 1)
 
   const typeMap = {}
+<<<<<<< HEAD
   orders.forEach(o => { typeMap[o.building_type?.replace(/_/g, ' ') || 'Other'] = (typeMap[o.building_type?.replace(/_/g, ' ') || 'Other'] || 0) + 1 })
+=======
+  orders.forEach(o => { typeMap[o.building_type || 'Other'] = (typeMap[o.building_type || 'Other'] || 0) + 1 })
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
   const typeData = Object.entries(typeMap).sort((a, b) => b[1] - a[1]).slice(0, 5)
 
   const stats = [
@@ -87,7 +107,17 @@ export default function AdminReports() {
                   <div key={i} className="admin-bar-chart-col">
                     <span className="admin-bar-chart-value">{m.amount > 0 ? fmt(m.amount) : '—'}</span>
                     <div className="admin-bar-chart-bar">
+<<<<<<< HEAD
                       <div className="admin-bar-chart-fill" style={{ height: `${(m.amount / maxMonthly) * 100}%`, '--bar-delay': `${i * 80}ms` }} />
+=======
+                      <div
+                        className="admin-bar-chart-fill"
+                        style={{
+                          height: `${(m.amount / maxMonthly) * 100}%`,
+                          '--bar-delay': `${i * 80}ms`,
+                        }}
+                      />
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
                     </div>
                     <span className="admin-bar-chart-label">{m.label}</span>
                   </div>
@@ -97,12 +127,17 @@ export default function AdminReports() {
 
             <article className="admin-card admin-panel admin-stagger-in">
               <div className="admin-section-head">
+<<<<<<< HEAD
                 <div><h3>Project distribution</h3><p>By building type, all time.</p></div>
+=======
+                <div><h3>Project distribution</h3><p>By type, all time.</p></div>
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
               </div>
               <div className="admin-donut-container">
                 {typeData.length === 0 ? (
                   <p style={{ color: 'var(--color-text-faint)', fontSize: 'var(--text-sm)' }}>No data yet.</p>
                 ) : (
+<<<<<<< HEAD
                   <div className="admin-type-list">
                     {typeData.map(([type, count], i) => (
                       <div key={i} className="admin-type-row">
@@ -117,6 +152,24 @@ export default function AdminReports() {
                       </div>
                     ))}
                   </div>
+=======
+                  <>
+                    <div className="admin-type-list">
+                      {typeData.map(([type, count], i) => (
+                        <div key={i} className="admin-type-row">
+                          <div className="admin-type-info">
+                            <span className={`admin-type-dot color-${i}`} />
+                            <span>{type}</span>
+                          </div>
+                          <div className="admin-bar" style={{ flex: 1, maxWidth: '60%' }}>
+                            <span style={{ width: `${(count / orders.length) * 100}%` }} />
+                          </div>
+                          <strong>{count}</strong>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
                 )}
               </div>
             </article>

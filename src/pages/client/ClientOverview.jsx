@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
 import { ClipboardList, Calculator, ArrowRight } from 'lucide-react'
+<<<<<<< HEAD
 
 const STATUS_COLOR = {
   pending:          { bg: '#fef3c7', text: '#92400e' },
@@ -32,6 +33,9 @@ function BadgeCheck({ status }) {
     </span>
   )
 }
+=======
+import StatusBadge from '../../components/ui/StatusBadge'
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
 
 export default function ClientOverview() {
   const { user, profile } = useAuth()
@@ -43,8 +47,20 @@ export default function ClientOverview() {
   useEffect(() => {
     if (!user) return
     Promise.all([
+<<<<<<< HEAD
       supabase.from('design_orders').select('id, status, city, state, created_at').eq('user_id', user.id).order('created_at', { ascending: false }),
       supabase.from('calculator_sessions').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+=======
+      supabase
+        .from('design_orders')
+        .select('id, status, city, state, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('calculator_sessions')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id),
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
     ]).then(([o, s]) => {
       setOrders(o.data || [])
       setSessions(s.count || 0)
@@ -52,11 +68,20 @@ export default function ClientOverview() {
     })
   }, [user])
 
+<<<<<<< HEAD
   const activeOrders = orders.filter(o => !['completed', 'cancelled'].includes(o.status))
 
   return (
     <div style={{ maxWidth: 860 }}>
       {/* Greeting */}
+=======
+  const activeOrders = orders.filter(
+    o => !['completed', 'cancelled'].includes(o.status)
+  )
+
+  return (
+    <div style={{ maxWidth: 860 }}>
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
       <div style={{ marginBottom: '2rem' }}>
         <h1 style={{ fontSize: 'var(--text-xl)', fontWeight: 800, color: 'var(--color-text)', marginBottom: 4 }}>
           Welcome back, {profile?.full_name?.split(' ')[0] || 'there'} 👋
@@ -69,6 +94,7 @@ export default function ClientOverview() {
       {/* KPI cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
         {[
+<<<<<<< HEAD
           { label: 'Total Orders',   value: orders.length,   icon: ClipboardList, action: () => navigate('/client/orders') },
           { label: 'Active Orders',  value: activeOrders.length, icon: ClipboardList, action: () => navigate('/client/orders') },
           { label: 'Calculator Uses',value: sessions,         icon: Calculator,    action: () => navigate('/calculator') },
@@ -78,12 +104,34 @@ export default function ClientOverview() {
             borderRadius: 'var(--radius-lg)', padding: '1.25rem',
             textAlign: 'left', cursor: 'pointer', transition: 'box-shadow 150ms',
           }}
+=======
+          { label: 'Total Orders',    value: orders.length,       icon: ClipboardList, action: () => navigate('/client/orders') },
+          { label: 'Active Orders',   value: activeOrders.length, icon: ClipboardList, action: () => navigate('/client/orders') },
+          { label: 'Calculator Uses', value: sessions,            icon: Calculator,    action: () => navigate('/calculator') },
+        ].map(({ label, value, icon: Icon, action }) => (
+          <button
+            key={label}
+            onClick={action}
+            style={{
+              background: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-lg)',
+              padding: '1.25rem',
+              textAlign: 'left',
+              cursor: 'pointer',
+              transition: 'box-shadow 150ms',
+            }}
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
             onMouseEnter={e => e.currentTarget.style.boxShadow = 'var(--shadow-md)'}
             onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
           >
             <Icon size={18} style={{ color: 'var(--color-primary)', marginBottom: '0.6rem' }} />
             <div style={{ fontSize: 'var(--text-xl)', fontWeight: 800, color: 'var(--color-text)', fontVariantNumeric: 'tabular-nums' }}>
+<<<<<<< HEAD
               {loading ? '—' : value}
+=======
+              {loading ? '-' : value}
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
             </div>
             <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 2 }}>{label}</div>
           </button>
@@ -94,16 +142,30 @@ export default function ClientOverview() {
       <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
         <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2 style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--color-text)' }}>Recent Orders</h2>
+<<<<<<< HEAD
           <button onClick={() => navigate('/client/orders')} style={{ fontSize: 'var(--text-xs)', color: 'var(--color-primary)', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
             View all <ArrowRight size={13} />
           </button>
         </div>
         {loading ? (
           <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>Loading…</div>
+=======
+          <button
+            onClick={() => navigate('/client/orders')}
+            style={{ fontSize: 'var(--text-xs)', color: 'var(--color-primary)', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+          >
+            View all <ArrowRight size={13} />
+          </button>
+        </div>
+
+        {loading ? (
+          <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>Loading...</div>
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
         ) : orders.length === 0 ? (
           <div style={{ padding: '2.5rem', textAlign: 'center' }}>
             <ClipboardList size={32} style={{ color: 'var(--color-text-faint)', margin: '0 auto 0.75rem' }} />
             <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginBottom: '1rem' }}>No orders yet</p>
+<<<<<<< HEAD
             <button onClick={() => navigate('/get-professional-design')} style={{ padding: '0.55rem 1.25rem', background: 'var(--color-primary)', color: '#fff', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: 'var(--text-sm)', cursor: 'pointer' }}>
               Request a Design
             </button>
@@ -130,3 +192,38 @@ export default function ClientOverview() {
     </div>
   )
 }
+=======
+            <button
+              onClick={() => navigate('/get-professional-design')}
+              style={{ padding: '0.55rem 1.25rem', background: 'var(--color-primary)', color: '#fff', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: 'var(--text-sm)', cursor: 'pointer' }}
+            >
+              Request a Design
+            </button>
+          </div>
+        ) : (
+          orders.slice(0, 5).map(o => (
+            <div
+              key={o.id}
+              onClick={() => navigate(`/client/orders/${o.id}`)}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.85rem 1.25rem', borderBottom: '1px solid var(--color-border)', cursor: 'pointer', transition: 'background 120ms' }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--color-surface-offset)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              <div>
+                <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--color-text)' }}>{o.city}, {o.state}</div>
+                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)', marginTop: 2 }}>
+                  {new Date(o.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <StatusBadge status={o.status} />
+                <ArrowRight size={14} style={{ color: 'var(--color-text-faint)' }} />
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
+>>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
