@@ -1,10 +1,7 @@
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useRef } from 'react'
-<<<<<<< HEAD
-=======
 import { useAuth } from '../../context/AuthContext'
 import ThemeToggle from '../ui/ThemeToggle'
->>>>>>> e36086cf40f337de00323cdffeee1bf58dedd1a0
 
 const NAV = [
   {
@@ -18,7 +15,7 @@ const NAV = [
         <rect x="3" y="14" width="7" height="7" rx="1"/>
         <rect x="14" y="14" width="7" height="7" rx="1"/>
       </svg>
-    )
+    ),
   },
   {
     label: 'Site Visits',
@@ -29,7 +26,7 @@ const NAV = [
         <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
         <circle cx="12" cy="9" r="2.5"/>
       </svg>
-    )
+    ),
   },
   {
     label: 'Payments',
@@ -40,7 +37,7 @@ const NAV = [
         <rect x="2" y="5" width="20" height="14" rx="2"/>
         <line x1="2" y1="10" x2="22" y2="10"/>
       </svg>
-    )
+    ),
   },
   {
     label: 'Design Queue',
@@ -53,7 +50,7 @@ const NAV = [
         <line x1="16" y1="13" x2="8" y2="13"/>
         <line x1="16" y1="17" x2="8" y2="17"/>
       </svg>
-    )
+    ),
   },
   {
     label: 'Customers',
@@ -66,7 +63,7 @@ const NAV = [
         <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
         <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
       </svg>
-    )
+    ),
   },
   {
     label: 'Reports',
@@ -78,29 +75,36 @@ const NAV = [
         <line x1="12" y1="20" x2="12" y2="4"/>
         <line x1="6" y1="20" x2="6" y2="14"/>
       </svg>
-    )
+    ),
   },
 ]
 
 export default function AdminSidebar() {
-  const location = useLocation()
+  const location     = useLocation()
+  const navigate     = useNavigate()
+  const { signOut }  = useAuth()
   const indicatorRef = useRef(null)
-  const navRef = useRef(null)
+  const navRef       = useRef(null)
 
   useEffect(() => {
-    const active = navRef.current?.querySelector('a.active')
+    const active    = navRef.current?.querySelector('a.active')
     const indicator = indicatorRef.current
     if (active && indicator) {
-      const { offsetTop, offsetHeight } = active
-      indicator.style.top = `${offsetTop}px`
-      indicator.style.height = `${offsetHeight}px`
+      indicator.style.top    = `${active.offsetTop}px`
+      indicator.style.height = `${active.offsetHeight}px`
       indicator.style.opacity = '1'
     }
   }, [location.pathname])
 
+  const handleSignOut = async () => {
+    await signOut()
+    navigate('/', { replace: true })
+  }
+
   return (
     <aside className="admin-sidebar">
-      <div className="admin-brand">
+      {/* Brand + Theme Toggle */}
+      <div className="admin-brand" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
         <div className="admin-brand-mark">
           <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
             <path d="M16 3 C16 3 6 14 6 20 a10 10 0 0 0 20 0 C26 14 16 3 16 3Z" fill="white" opacity="0.9"/>
@@ -137,6 +141,15 @@ export default function AdminSidebar() {
           <p>Lead → visit → drawing → payment → execution. Each section mirrors a real field handoff.</p>
         </div>
       </div>
+
+      <button onClick={handleSignOut} className="admin-signout-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        Sign out
+      </button>
     </aside>
   )
 }

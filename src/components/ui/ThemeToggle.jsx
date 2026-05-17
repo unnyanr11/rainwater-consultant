@@ -4,9 +4,7 @@ import { useTheme } from '../../context/ThemeContext'
 export default function ThemeToggle({ size = 'md' }) {
   const { theme, toggle } = useTheme()
   const isDark = theme === 'dark'
-
-  const dim = size === 'sm' ? 14 : 16
-  const pad = size === 'sm' ? '6px 8px' : '8px 10px'
+  const iconSize = size === 'sm' ? 14 : 16
 
   return (
     <button
@@ -14,10 +12,10 @@ export default function ThemeToggle({ size = 'md' }) {
       aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
       title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
       style={{
-        display: 'flex',
+        display: 'inline-flex',
         alignItems: 'center',
-        gap: '6px',
-        padding: pad,
+        gap: '5px',
+        padding: size === 'sm' ? '5px 8px' : '7px 11px',
         borderRadius: 'var(--radius-full)',
         border: '1.5px solid var(--color-border)',
         background: 'var(--color-surface-offset)',
@@ -25,8 +23,9 @@ export default function ThemeToggle({ size = 'md' }) {
         cursor: 'pointer',
         fontSize: 'var(--text-xs)',
         fontWeight: 600,
-        transition: 'all 180ms cubic-bezier(0.16,1,0.3,1)',
+        lineHeight: 1,
         flexShrink: 0,
+        transition: 'background 180ms, color 180ms, border-color 180ms',
       }}
       onMouseEnter={e => {
         e.currentTarget.style.background = 'var(--color-surface-dynamic)'
@@ -39,9 +38,8 @@ export default function ThemeToggle({ size = 'md' }) {
         e.currentTarget.style.borderColor = 'var(--color-border)'
       }}
     >
-      {isDark
-        ? <><Sun size={dim} /><span>{size !== 'sm' && 'Light'}</span></>
-        : <><Moon size={dim} /><span>{size !== 'sm' && 'Dark'}</span></>}
+      {isDark ? <Sun size={iconSize} /> : <Moon size={iconSize} />}
+      {size !== 'sm' && <span>{isDark ? 'Light' : 'Dark'}</span>}
     </button>
   )
 }
