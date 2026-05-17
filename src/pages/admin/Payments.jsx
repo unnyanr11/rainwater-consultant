@@ -15,12 +15,7 @@ export default function AdminPayments() {
     async function load() {
       const { data } = await supabase
         .from('order_payments')
-<<<<<<< HEAD
         .select('id, amount_inr, payment_status, payment_type, paid_at, created_at, design_orders(contact_name, building_type, city, status)')
-=======
-        // FIX: explicit FK hint so Supabase resolves the join correctly
-        .select('id, amount_inr, payment_status, payment_type, paid_at, created_at, design_orders!order_id(contact_name, building_type, city, status)')
->>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
         .order('created_at', { ascending: false })
       setPayments(data || [])
       setLoading(false)
@@ -30,10 +25,6 @@ export default function AdminPayments() {
 
   const totalCollected = payments.filter(p => p.payment_status === 'paid').reduce((s, p) => s + (p.amount_inr || 0), 0)
   const totalPending = payments.filter(p => p.payment_status === 'pending').reduce((s, p) => s + (p.amount_inr || 0), 0)
-<<<<<<< HEAD
-=======
-  // FIX: 'partial' is a valid payment_status enum value — count it correctly
->>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
   const totalPartial = payments.filter(p => p.payment_status === 'partial').reduce((s, p) => s + (p.amount_inr || 0), 0)
   const fmt = (n) => n >= 100000 ? `₹${(n / 100000).toFixed(2)}L` : `₹${(n / 1000).toFixed(1)}K`
 
@@ -134,10 +125,6 @@ export default function AdminPayments() {
                 <tbody>
                   {filtered.map((p, i) => (
                     <tr key={p.id} className="admin-table-row" style={{ '--row-delay': `${i * 40}ms` }}>
-<<<<<<< HEAD
-=======
-                      {/* FIX: guard against null design_orders on join */}
->>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
                       <td><strong>{p.design_orders?.contact_name || '—'}</strong></td>
                       <td><span>{p.design_orders?.building_type?.replace(/_/g, ' ') || '—'}</span></td>
                       <td><span>{(p.design_orders?.status || '—').replace(/_/g, ' ')}</span></td>

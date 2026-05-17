@@ -1,7 +1,4 @@
-<<<<<<< HEAD
 
-=======
->>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
 import { motion } from 'framer-motion'
 
 export default function LiquidMeter({

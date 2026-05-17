@@ -21,12 +21,7 @@ export default function AdminDashboard() {
     async function load() {
       const [ordersRes, paymentsRes, visitsRes, lanesRes] = await Promise.all([
         supabase.from('design_orders').select('id, status, created_at'),
-<<<<<<< HEAD
         supabase.from('order_payments').select('id, amount_inr, payment_status, created_at, design_orders(contact_name, building_type, status)'),
-=======
-        // FIX: explicit FK hint so join never returns null silently
-        supabase.from('order_payments').select('id, amount_inr, payment_status, created_at, design_orders!order_id(contact_name, building_type, status)'),
->>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
         supabase.from('design_orders').select('id, status').in('status', ['visit_scheduled', 'visit_complete', 'measurement_done']),
         supabase.from('design_orders').select('id, contact_name, building_type, status, message').limit(12),
       ])
@@ -53,7 +48,6 @@ export default function AdminDashboard() {
         { label: 'Payments', value: `₹${(pendingAmount / 100000).toFixed(2)}L`, tag: 'payment', desc: 'Pending against estimates, visits, and design milestones.' },
       ])
 
-      // FIX: guard against null design_orders on join
       const recentPays = pays.slice(0, 4).map(p => ({
         client: p.design_orders?.contact_name || 'Unknown',
         project: p.design_orders?.building_type || '',

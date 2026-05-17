@@ -2,14 +2,9 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
-<<<<<<< HEAD
 import { ClipboardList, ArrowRight, MapPin, BadgeCheck } from 'lucide-react'
 
 // reuse BadgeCheck from above (move to a shared component or copy it here)
-=======
-import { ClipboardList, ArrowRight, MapPin } from 'lucide-react'
-import StatusBadge from '../../components/ui/StatusBadge'
->>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
 
 export default function ClientOrders() {
   const { user } = useAuth()
@@ -31,24 +26,13 @@ export default function ClientOrders() {
     <div style={{ maxWidth: 760 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <h1 style={{ fontSize: 'var(--text-xl)', fontWeight: 800, color: 'var(--color-text)' }}>My Orders</h1>
-<<<<<<< HEAD
         <button onClick={() => navigate('/get-professional-design')} style={{ padding: '0.55rem 1.1rem', background: 'var(--color-primary)', color: '#fff', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: 'var(--text-sm)', cursor: 'pointer' }}>
-=======
-        <button
-          onClick={() => navigate('/get-professional-design')}
-          style={{ padding: '0.55rem 1.1rem', background: 'var(--color-primary)', color: '#fff', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: 'var(--text-sm)', cursor: 'pointer' }}
-        >
->>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
           + New Order
         </button>
       </div>
 
       {loading ? (
-<<<<<<< HEAD
         <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>Loading…</p>
-=======
-        <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>Loading...</p>
->>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
       ) : orders.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '3rem', background: 'var(--color-surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)' }}>
           <ClipboardList size={36} style={{ color: 'var(--color-text-faint)', margin: '0 auto 1rem' }} />
@@ -57,25 +41,8 @@ export default function ClientOrders() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           {orders.map(o => (
-<<<<<<< HEAD
             <div key={o.id} onClick={() => navigate(`/client/orders/${o.id}`)}
               style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', padding: '1rem 1.25rem', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'box-shadow 150ms' }}
-=======
-            <div
-              key={o.id}
-              onClick={() => navigate(`/client/orders/${o.id}`)}
-              style={{
-                background: 'var(--color-surface)',
-                border: '1px solid var(--color-border)',
-                borderRadius: 'var(--radius-lg)',
-                padding: '1rem 1.25rem',
-                cursor: 'pointer',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                transition: 'box-shadow 150ms',
-              }}
->>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
               onMouseEnter={e => e.currentTarget.style.boxShadow = 'var(--shadow-md)'}
               onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
             >
@@ -85,28 +52,16 @@ export default function ClientOrders() {
                   <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--color-text)' }}>{o.city}, {o.state}</span>
                 </div>
                 <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
-<<<<<<< HEAD
                   {o.building_type?.replace(/_/g, ' ')} · {new Date(o.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </div>
                 {o.quoted_amount && (
                   <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-primary)', fontWeight: 700, marginTop: 4 }}>
                     Quote: ₹{Number(o.quoted_amount).toLocaleString('en-IN')}
-=======
-                  {o.building_type?.replace(/_/g, ' ')} &middot; {new Date(o.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                </div>
-                {o.quoted_amount && (
-                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-primary)', fontWeight: 700, marginTop: 4 }}>
-                    Quote: Rs.{Number(o.quoted_amount).toLocaleString('en-IN')}
->>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
                   </div>
                 )}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-<<<<<<< HEAD
                 <BadgeCheck status={o.status} />
-=======
-                <StatusBadge status={o.status} />
->>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
                 <ArrowRight size={14} style={{ color: 'var(--color-text-faint)' }} />
               </div>
             </div>
@@ -115,8 +70,4 @@ export default function ClientOrders() {
       )}
     </div>
   )
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c

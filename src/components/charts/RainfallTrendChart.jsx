@@ -14,7 +14,7 @@ const SCENARIO_COLORS = {
 }
 
 // Custom animated dot — normal dots are blue, min/max are highlighted
-function CustomDot({ cx, cy, payload, scenarios }) {
+function CustomDot({ cx, cy, payload, scenarios, selectedScenario }) {
   const isMin = payload.mm === scenarios.minimum.value
   const isMax = payload.mm === scenarios.maximum.value
   const highlight = isMin || isMax
@@ -82,6 +82,7 @@ function CustomTooltip({ active, payload, label, scenarios }) {
 export default function RainfallTrendChart({ data, selectedScenario, scenarios }) {
   const [animated, setAnimated] = useState(false)
 
+  // Recharts line draw animation triggers on mount
   useEffect(() => {
     const t = setTimeout(() => setAnimated(true), 80)
     return () => clearTimeout(t)
@@ -90,6 +91,7 @@ export default function RainfallTrendChart({ data, selectedScenario, scenarios }
   const scenarioColor = SCENARIO_COLORS[selectedScenario]
   const scenarioVal = scenarios[selectedScenario]?.value
 
+  // Add index to each data point for dot stagger
   const chartData = data.map((d, i) => ({ ...d, index: i }))
 
   return (
@@ -99,6 +101,7 @@ export default function RainfallTrendChart({ data, selectedScenario, scenarios }
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       style={{ marginBottom: 'var(--space-4)' }}
     >
+      {/* Chart header */}
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -113,6 +116,8 @@ export default function RainfallTrendChart({ data, selectedScenario, scenarios }
             {data[0]?.year}–{data[data.length - 1]?.year} · Open-Meteo historical data
           </span>
         </div>
+
+        {/* Legend dots */}
         <div style={{ display: 'flex', gap: 'var(--space-4)', alignItems: 'center' }}>
           {[
             { color: '#e8993a', label: 'Driest' },
@@ -127,6 +132,7 @@ export default function RainfallTrendChart({ data, selectedScenario, scenarios }
         </div>
       </div>
 
+      {/* Chart */}
       <ResponsiveContainer width="100%" height={200}>
         <LineChart data={chartData} margin={{ top: 16, right: 16, bottom: 0, left: 0 }}>
           <CartesianGrid
@@ -151,6 +157,8 @@ export default function RainfallTrendChart({ data, selectedScenario, scenarios }
             content={<CustomTooltip scenarios={scenarios} />}
             cursor={{ stroke: 'var(--color-border)', strokeWidth: 1, strokeDasharray: '4 4' }}
           />
+
+          {/* Selected scenario reference line */}
           <ReferenceLine
             y={scenarioVal}
             stroke={scenarioColor}
@@ -165,6 +173,8 @@ export default function RainfallTrendChart({ data, selectedScenario, scenarios }
               fontWeight: 700,
             }}
           />
+
+          {/* The line itself */}
           <Line
             type="monotone"
             dataKey="mm"
@@ -179,6 +189,7 @@ export default function RainfallTrendChart({ data, selectedScenario, scenarios }
               />
             )}
             activeDot={{ r: 8, fill: '#0b6fb8', stroke: '#fff', strokeWidth: 2 }}
+            // Recharts built-in line draw animation
             isAnimationActive={animated}
             animationDuration={900}
             animationEasing="ease-out"
@@ -186,6 +197,7 @@ export default function RainfallTrendChart({ data, selectedScenario, scenarios }
         </LineChart>
       </ResponsiveContainer>
 
+      {/* Area under the line — subtle fill via gradient */}
       <style>{`
         .recharts-line-curve {
           filter: drop-shadow(0 2px 6px rgba(11, 111, 184, 0.2));

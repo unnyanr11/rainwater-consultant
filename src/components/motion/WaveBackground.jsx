@@ -1,8 +1,5 @@
-<<<<<<< HEAD
 import React from 'react'
 
-=======
->>>>>>> ac353a5455730e56e2e74dcdd33da75755af363c
 export default function WaveBackground({
   height = 180,
   color1 = 'rgba(82,181,232,0.18)',
@@ -24,6 +21,7 @@ export default function WaveBackground({
         zIndex: 0,
       }}
     >
+      {/* Wave layer 3 — back */}
       <svg
         className="wave-layer three"
         viewBox="0 0 1440 160"
@@ -37,6 +35,7 @@ export default function WaveBackground({
         />
       </svg>
 
+      {/* Wave layer 2 — mid */}
       <svg
         className="wave-layer two"
         viewBox="0 0 1440 160"
@@ -50,6 +49,7 @@ export default function WaveBackground({
         />
       </svg>
 
+      {/* Wave layer 1 — front */}
       <svg
         className="wave-layer one"
         viewBox="0 0 1440 160"
