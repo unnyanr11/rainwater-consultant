@@ -1,123 +1,137 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '../../lib/supabaseClient'
+import { supabase } from '../../lib/supabase'
+import AdminSidebar from '../../components/admin/AdminSidebar'
+import AdminPageHeader from '../../components/admin/AdminPageHeader'
+import AdminStatRow from '../../components/admin/AdminStatRow'
+import AdminEmptyState from '../../components/admin/AdminEmptyState'
+import PageTransition from '../../components/motion/PageTransition'
+
+const STATUS_COLOR = {
+  pending:       'pending',
+  reviewed:      'visit',
+  quote_sent:    'partial',
+  deposit_paid:  'lead',
+  in_progress:   'visit',
+  drawings_ready:'design',
+  completed:     'paid',
+  cancelled:     'lead',
+}
+
+const STATUS_LABEL = {
+  pending:       'New Lead',
+  reviewed:      'Reviewed',
+  quote_sent:    'Quote Sent',
+  deposit_paid:  'Deposit Paid',
+  in_progress:   'In Progress',
+  drawings_ready:'Drawings Ready',
+  completed:     'Completed',
+  cancelled:     'Cancelled',
+}
 
 export default function AdminCustomers() {
   const [customers, setCustomers] = useState([])
-  const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     async function load() {
-      try {
-        const { data } = await supabase
-          .from('profiles')
-          .select('id, full_name, email, phone, created_at, design_orders(id, status, total_price)')
-          .order('created_at', { ascending: false })
-        setCustomers(data || [])
-      } catch (e) { console.error(e) }
-      finally { setLoading(false) }
+      const { data } = await supabase
+        .from('design_orders')
+        .select('id, user_id, contact_name, contact_email, contact_phone, building_type, status, city, state, created_at, quoted_amount')
+        .order('created_at', { ascending: false })
+
+      // Deduplicate by user_id (preferred) or contact_email
+      const seen = new Set()
+      const unique = (data || []).filter(d => {
+        const key = d.user_id || d.contact_email
+        if (!key || seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
+      setCustomers(unique)
+      setLoading(false)
     }
     load()
   }, [])
 
-  const filtered = customers.filter(c =>
-    !search ||
-    c.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-    c.email?.toLowerCase().includes(search.toLowerCase())
+  const active    = customers.filter(c => !['completed', 'cancelled'].includes(c.status)).length
+  const completed = customers.filter(c => c.status === 'completed').length
+
+  const stats = [
+    { label: 'Total clients',  value: String(customers.length).padStart(2, '0'), sub: 'Unique accounts' },
+    { label: 'Active',         value: String(active).padStart(2, '0'),           sub: 'Open files', trend: 4 },
+    { label: 'Completed',      value: String(completed).padStart(2, '0'),        sub: 'Closed projects' },
+    { label: 'Avg projects',   value: customers.length ? '1.0' : '—',           sub: 'Per client' },
+  ]
+
+  const filtered = search
+    ? customers.filter(c =>
+        c.contact_name?.toLowerCase().includes(search.toLowerCase()) ||
+        c.contact_email?.toLowerCase().includes(search.toLowerCase()) ||
+        c.building_type?.toLowerCase().includes(search.toLowerCase()) ||
+        c.city?.toLowerCase().includes(search.toLowerCase())
+      )
+    : customers
+
+  if (loading) return (
+    <div className="admin-shell"><AdminSidebar /><main className="admin-main"><div className="admin-skeleton-page"><div className="admin-skeleton admin-skeleton-heading" /><div className="admin-skeleton admin-skeleton-block" /></div></main></div>
   )
 
-  const getInitials = (name) => name ? name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase() : '?'
-  const fmt = (n) => n >= 100000 ? `\u20B9${(n/100000).toFixed(2)}L` : n >= 1000 ? `\u20B9${(n/1000).toFixed(1)}K` : `\u20B9${n||0}`
-  const activeOrders = (c) => c.design_orders?.filter(o => o.status !== 'completed' && o.status !== 'cancelled').length || 0
-  const totalSpent = (c) => c.design_orders?.reduce((s,o) => s + (o.total_price||0), 0) || 0
-
   return (
-    <>
-      <div className="admin-page-header">
-        <div>
-          <p className="admin-page-eyebrow">Admin • Customers</p>
-          <h1 className="admin-page-title">Client roster</h1>
-          <p className="admin-page-subtitle">Every registered client with their project history, active orders, and total business value.</p>
-        </div>
-        <div className="admin-actions">
-          <button className="btn btn-secondary">Export list</button>
-        </div>
-      </div>
+    <PageTransition>
+      <div className="admin-shell">
+        <AdminSidebar />
+        <main className="admin-main">
+          <AdminPageHeader
+            eyebrow="Customers"
+            title={<>Client accounts &amp;<br />project history.</>}
+            subtitle="Every client, their project type, current stage, and engagement history."
+            actions={<>
+              <button className="admin-btn secondary">Export clients</button>
+              <button className="admin-btn primary">Add client</button>
+            </>}
+          />
 
-      {/* Customer KPIs */}
-      <div className="admin-grid-3">
-        <div className="kpi-chip accent">
-          <span className="kpi-chip-label">Total clients</span>
-          <span className="kpi-chip-value">{loading ? '…' : customers.length}</span>
-          <span className="kpi-chip-sub">All registered accounts</span>
-        </div>
-        <div className="kpi-chip">
-          <span className="kpi-chip-label">With active orders</span>
-          <span className="kpi-chip-value">{loading ? '…' : customers.filter(c => activeOrders(c) > 0).length}</span>
-          <span className="kpi-chip-sub">Clients with ongoing work</span>
-        </div>
-        <div className="kpi-chip">
-          <span className="kpi-chip-label">Total order value</span>
-          <span className="kpi-chip-value">{loading ? '…' : fmt(customers.reduce((s,c) => s + totalSpent(c), 0))}</span>
-          <span className="kpi-chip-sub">Across all clients and orders</span>
-        </div>
-      </div>
+          <AdminStatRow stats={stats} />
 
-      {/* Search */}
-      <div>
-        <input
-          type="text"
-          placeholder="Search by name or email…"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          style={{ padding:'0.85rem 1.25rem', borderRadius:'999px', border:'1px solid #dbe8e2', background:'white', fontSize:'0.875rem', width:'100%', maxWidth:'420px', outline:'none', fontFamily:'inherit', color:'#18342d' }}
-        />
-      </div>
-
-      {/* Customer table */}
-      <div className="admin-card">
-        <div className="admin-card-header">
-          <div>
-            <h3 className="admin-card-title">All customers</h3>
-            <p className="admin-card-subtitle">Click a row to see full order history</p>
+          <div className="admin-search-bar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input
+              type="text"
+              placeholder="Search by name, email, building type or city…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="admin-search-input"
+            />
+            {search && <button className="admin-search-clear" onClick={() => setSearch('')}>✕</button>}
           </div>
-        </div>
-        {loading ? (
-          <p style={{color:'#8aa098',fontSize:'0.875rem'}}>Loading customers…</p>
-        ) : filtered.length === 0 ? (
-          <div className="admin-empty"><h3>No customers found</h3><p>No clients match your search. Try a different name or email.</p></div>
-        ) : (
-          <div className="admin-table-wrap">
-            <table className="admin-table">
-              <thead><tr><th>Client</th><th>Contact</th><th>Orders</th><th>Active</th><th>Total value</th><th>Joined</th></tr></thead>
-              <tbody>
-                {filtered.map(c => (
-                  <tr key={c.id} style={{cursor:'pointer'}}>
-                    <td>
-                      <div className="customer-row">
-                        <div className="customer-avatar">{getInitials(c.full_name)}</div>
-                        <div>
-                          <span className="td-primary">{c.full_name || 'Unnamed'}</span>
-                          <span className="td-secondary">{c.email}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td><span className="td-secondary">{c.phone || '—'}</span></td>
-                    <td><span style={{fontWeight:700,color:'#18342d'}}>{c.design_orders?.length || 0}</span></td>
-                    <td>
-                      {activeOrders(c) > 0
-                        ? <span className="badge badge-review">{activeOrders(c)} active</span>
-                        : <span className="badge badge-completed">All done</span>}
-                    </td>
-                    <td><span style={{fontWeight:700,color:'#0d7a5f'}}>{fmt(totalSpent(c))}</span></td>
-                    <td><span className="td-secondary">{new Date(c.created_at).toLocaleDateString('en-IN')}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+
+          {filtered.length === 0 ? (
+            <AdminEmptyState icon="👤" title="No clients found" body={search ? 'Try a different name or project type.' : 'No customers yet.'} />
+          ) : (
+            <div className="admin-customer-grid admin-stagger-in">
+              {filtered.map((c, i) => (
+                <div key={c.id} className="admin-customer-card" style={{ '--card-delay': `${i * 50}ms` }}>
+                  <div className="admin-customer-avatar">
+                    {(c.contact_name || 'C').charAt(0).toUpperCase()}
+                  </div>
+                  <div className="admin-customer-info">
+                    <strong>{c.contact_name || 'Unknown'}</strong>
+                    <span>{(c.building_type || '—').replace(/_/g, ' ')}</span>
+                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)' }}>{c.city ? `${c.city}, ${c.state}` : ''}</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 'var(--space-1)' }}>
+                    <span className={`admin-status ${STATUS_COLOR[c.status] || 'pending'}`}>
+                      {STATUS_LABEL[c.status] || c.status}
+                    </span>
+                    {c.quoted_amount && <small style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-xs)' }}>₹{Number(c.quoted_amount).toLocaleString('en-IN')}</small>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </main>
       </div>
-    </>
+    </PageTransition>
   )
 }
