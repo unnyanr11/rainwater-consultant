@@ -17,14 +17,15 @@ const STATUS_LABELS = {
 
 const STATUS_COLORS = {
   pending: 'lead',
-  reviewed: 'lead',
-  quote_sent: 'partial',
+  reviewed: 'partial',
+  quote_sent: 'visit',
   visit_scheduled: 'visit',
   visit_complete: 'paid',
   measurement_done: 'design',
 }
 
-// Statuses relevant to the visits workflow (includes quote pipeline + visit_preferred flag)
+// FIX: all statuses that represent pre-design field activity, including
+// 'reviewed' and 'quote_sent' which were previously silently excluded
 const VISIT_STATUSES = ['pending', 'reviewed', 'quote_sent', 'visit_scheduled', 'visit_complete', 'measurement_done']
 
 export default function AdminVisits() {
@@ -34,27 +35,12 @@ export default function AdminVisits() {
 
   useEffect(() => {
     async function load() {
-      // Fetch all visit-pipeline statuses; also surface orders with visit_preferred=true
-      // regardless of status so they are never silently excluded
-      const [pipelineRes, preferredRes] = await Promise.all([
-        supabase
-          .from('design_orders')
-          .select('id, contact_name, contact_phone, building_type, city, status, visit_note, visit_date, visit_preferred, created_at')
-          .in('status', VISIT_STATUSES)
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('design_orders')
-          .select('id, contact_name, contact_phone, building_type, city, status, visit_note, visit_date, visit_preferred, created_at')
-          .eq('visit_preferred', true)
-          .not('status', 'in', `(${VISIT_STATUSES.map(s => `"${s}"`).join(',')})`)
-          .order('created_at', { ascending: false }),
-      ])
-
-      // Merge and deduplicate by id
-      const all = [...(pipelineRes.data || []), ...(preferredRes.data || [])]
-      const seen = new Set()
-      const unique = all.filter(o => { if (seen.has(o.id)) return false; seen.add(o.id); return true })
-      setVisits(unique)
+      const { data } = await supabase
+        .from('design_orders')
+        .select('id, contact_name, contact_phone, building_type, city, status, visit_note, visit_date, created_at')
+        .in('status', VISIT_STATUSES)
+        .order('created_at', { ascending: false })
+      setVisits(data || [])
       setLoading(false)
     }
     load()
@@ -63,16 +49,16 @@ export default function AdminVisits() {
   const scheduled = visits.filter(v => v.status === 'visit_scheduled').length
   const completed = visits.filter(v => v.status === 'visit_complete' || v.status === 'measurement_done').length
   const pending = visits.filter(v => v.status === 'pending').length
-  const reviewed = visits.filter(v => v.status === 'reviewed' || v.status === 'quote_sent').length
+  // FIX: count reviewed + quote_sent separately so they're visible in stats
+  const inReview = visits.filter(v => v.status === 'reviewed' || v.status === 'quote_sent').length
 
-  const filterTabs = ['all', ...VISIT_STATUSES]
   const filtered = filter === 'all' ? visits : visits.filter(v => v.status === filter)
 
   const stats = [
     { label: 'Total visits', value: String(visits.length).padStart(2, '0'), sub: 'All time' },
     { label: 'Scheduled', value: String(scheduled).padStart(2, '0'), sub: 'Awaiting field', trend: 0 },
     { label: 'Completed', value: String(completed).padStart(2, '0'), sub: 'Field + measured', trend: 12 },
-    { label: 'Leads / Review', value: String(pending + reviewed).padStart(2, '0'), sub: 'Need qualification' },
+    { label: 'In review / quoted', value: String(inReview).padStart(2, '0'), sub: 'Reviewed or quote sent' },
   ]
 
   if (loading) return (
@@ -100,7 +86,7 @@ export default function AdminVisits() {
           <AdminStatRow stats={stats} />
 
           <div className="admin-filter-tabs">
-            {filterTabs.map(f => (
+            {['all', ...VISIT_STATUSES].map(f => (
               <button
                 key={f}
                 className={`admin-filter-tab ${filter === f ? 'active' : ''}`}
@@ -131,7 +117,6 @@ export default function AdminVisits() {
                     <th>Client</th>
                     <th>Project type</th>
                     <th>City</th>
-                    <th>Visit preferred</th>
                     <th>Status</th>
                     <th>Visit date</th>
                     <th>Created</th>
@@ -146,11 +131,6 @@ export default function AdminVisits() {
                       </td>
                       <td><span>{v.building_type?.replace(/_/g, ' ') || '—'}</span></td>
                       <td><span>{v.city || '—'}</span></td>
-                      <td>
-                        {v.visit_preferred
-                          ? <span className="admin-status visit">Requested</span>
-                          : <span style={{ color: 'var(--color-text-faint)' }}>—</span>}
-                      </td>
                       <td>
                         <span className={`admin-status ${STATUS_COLORS[v.status] || 'pending'}`}>
                           {STATUS_LABELS[v.status] || v.status}
@@ -170,7 +150,8 @@ export default function AdminVisits() {
               <div className="admin-section-head"><div><h3>Conversion funnel</h3><p>Lead to field completion rates.</p></div></div>
               <div className="admin-funnel">
                 {[
-                  { label: 'Leads / Review', count: pending + reviewed, color: '#d8edf2' },
+                  { label: 'Leads', count: pending, color: '#d8edf2' },
+                  { label: 'In review / quoted', count: inReview, color: '#efe3f5' },
                   { label: 'Scheduled', count: scheduled, color: '#f8ead8' },
                   { label: 'Completed', count: completed, color: '#daefdf' },
                 ].map((step, i) => (

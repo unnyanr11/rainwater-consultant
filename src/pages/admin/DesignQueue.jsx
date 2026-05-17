@@ -29,9 +29,9 @@ export default function AdminDesigns() {
 
   useEffect(() => {
     async function load() {
+      // FIX: include order_files to show drawing file count and unlock status per order
       const { data } = await supabase
         .from('design_orders')
-        // Include order_files via FK to show drawing file counts + unlock status
         .select('id, contact_name, building_type, city, status, admin_notes, created_at, order_files(id, is_drawing, is_unlocked)')
         .in('status', ['measurement_done', 'drawing_in_progress', 'drawing_review', 'drawing_ready', 'completed'])
         .order('created_at', { ascending: false })
@@ -43,11 +43,12 @@ export default function AdminDesigns() {
 
   const byStage = (s) => designs.filter(d => d.status === s)
 
-  // Helper: summarise file counts for a design order
-  const fileInfo = (files = []) => {
+  // Helper: drawing file summary for a design order
+  const getFileInfo = (d) => {
+    const files = d.order_files || []
     const drawings = files.filter(f => f.is_drawing)
     const unlocked = drawings.filter(f => f.is_unlocked)
-    return { total: files.length, drawings: drawings.length, unlocked: unlocked.length }
+    return { total: drawings.length, unlocked: unlocked.length }
   }
 
   const stats = [
@@ -95,36 +96,22 @@ export default function AdminDesigns() {
                       <div className="admin-design-empty">Empty lane</div>
                     )}
                     {byStage(status).map((d, i) => {
-                      const fi = fileInfo(d.order_files)
+                      const { total, unlocked } = getFileInfo(d)
                       return (
                         <div key={d.id} className="admin-design-card" style={{ '--card-delay': `${i * 60}ms` }}>
                           <strong>{d.contact_name || 'Client'}</strong>
                           <span>{d.building_type?.replace(/_/g, ' ') || '—'}</span>
                           <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)' }}>{d.city || ''}</span>
                           {d.admin_notes && <p className="admin-design-note">{d.admin_notes}</p>}
-                          {/* File summary */}
-                          <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-2)', flexWrap: 'wrap' }}>
-                            {fi.total > 0 ? (
-                              <>
-                                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
-                                  📎 {fi.total} file{fi.total !== 1 ? 's' : ''}
-                                </span>
-                                {fi.drawings > 0 && (
-                                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
-                                    ✏️ {fi.drawings} drawing{fi.drawings !== 1 ? 's' : ''}
-                                  </span>
-                                )}
-                                {fi.drawings > 0 && (
-                                  <span className={`admin-status ${fi.unlocked === fi.drawings ? 'paid' : fi.unlocked > 0 ? 'partial' : 'pending'}`}
-                                    style={{ fontSize: 'var(--text-xs)', padding: '1px 6px' }}>
-                                    {fi.unlocked}/{fi.drawings} unlocked
-                                  </span>
-                                )}
-                              </>
-                            ) : (
-                              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)' }}>No files yet</span>
-                            )}
-                          </div>
+                          {/* FIX: show drawing file count and unlock status from order_files */}
+                          {total > 0 && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)', marginTop: 'var(--space-1)' }}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+                              <span style={{ fontSize: 'var(--text-xs)', color: unlocked === total ? 'var(--color-success)' : 'var(--color-text-muted)' }}>
+                                {unlocked}/{total} drawing{total !== 1 ? 's' : ''} {unlocked === total ? 'unlocked' : 'locked'}
+                              </span>
+                            </div>
+                          )}
                           <small>{new Date(d.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</small>
                         </div>
                       )
@@ -139,24 +126,21 @@ export default function AdminDesigns() {
                 <AdminEmptyState icon="✏️" title="No designs in queue" body="Start by adding a measurement-done order." />
               ) : (
                 <table className="admin-table">
-                  <thead><tr><th>Client</th><th>Project</th><th>City</th><th>Stage</th><th>Files</th><th>Drawings</th><th>Admin notes</th><th>Date</th></tr></thead>
+                  <thead><tr><th>Client</th><th>Project</th><th>City</th><th>Stage</th><th>Files</th><th>Admin notes</th><th>Date</th></tr></thead>
                   <tbody>
                     {designs.map((d, i) => {
-                      const fi = fileInfo(d.order_files)
+                      const { total, unlocked } = getFileInfo(d)
                       return (
                         <tr key={d.id} className="admin-table-row" style={{ '--row-delay': `${i * 40}ms` }}>
                           <td><strong>{d.contact_name || '—'}</strong></td>
                           <td><span>{d.building_type?.replace(/_/g, ' ') || '—'}</span></td>
                           <td><span>{d.city || '—'}</span></td>
                           <td><span className={`admin-status ${STAGE_COLORS[d.status] || 'pending'}`}>{STAGE_LABELS[d.status] || d.status}</span></td>
-                          <td><span>{fi.total > 0 ? `${fi.total} file${fi.total !== 1 ? 's' : ''}` : '—'}</span></td>
+                          {/* FIX: show drawing file count from order_files */}
                           <td>
-                            {fi.drawings > 0
-                              ? <span className={`admin-status ${fi.unlocked === fi.drawings ? 'paid' : fi.unlocked > 0 ? 'partial' : 'pending'}`}>
-                                  {fi.unlocked}/{fi.drawings} unlocked
-                                </span>
-                              : <span style={{ color: 'var(--color-text-faint)' }}>—</span>
-                            }
+                            <span style={{ fontSize: 'var(--text-xs)', color: total === 0 ? 'var(--color-text-faint)' : unlocked === total ? 'var(--color-success)' : 'var(--color-text-muted)' }}>
+                              {total === 0 ? 'No files' : `${unlocked}/${total} unlocked`}
+                            </span>
                           </td>
                           <td><span style={{ maxWidth: '22ch', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.admin_notes || '—'}</span></td>
                           <td><span>{new Date(d.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span></td>

@@ -13,19 +13,21 @@ export default function AdminCustomers() {
 
   useEffect(() => {
     async function load() {
-      // Fetch all orders with the profile join (for logged-in clients)
+      // FIX: join profiles table via user_id to get canonical client data
+      // for logged-in clients. Falls back to contact_* fields for guest orders.
       const { data } = await supabase
         .from('design_orders')
-        .select('id, contact_name, contact_email, contact_phone, building_type, status, message, created_at, user_id, profiles!user_id(full_name, email, phone)')
+        .select('id, contact_name, contact_email, contact_phone, building_type, status, message, created_at, user_id, profiles(full_name, email, phone, city, avatar_url)')
         .order('created_at', { ascending: false })
 
-      // Deduplicate: prefer user_id for logged-in clients, fall back to contact_email for guests
-      const seenUsers = new Set()
+      // Deduplicate: prefer user_id grouping for authenticated clients,
+      // fall back to contact_email for guest submissions
+      const seenUserIds = new Set()
       const seenEmails = new Set()
       const unique = (data || []).filter(d => {
         if (d.user_id) {
-          if (seenUsers.has(d.user_id)) return false
-          seenUsers.add(d.user_id)
+          if (seenUserIds.has(d.user_id)) return false
+          seenUserIds.add(d.user_id)
           return true
         }
         const key = d.contact_email || d.contact_name
@@ -34,19 +36,16 @@ export default function AdminCustomers() {
         return true
       })
 
-      // Normalise display name: prefer profile.full_name for logged-in clients
-      const normalised = unique.map(d => ({
-        ...d,
-        display_name: d.profiles?.full_name || d.contact_name || 'Unknown',
-        display_email: d.profiles?.email || d.contact_email || '',
-        display_phone: d.profiles?.phone || d.contact_phone || '',
-      }))
-
-      setCustomers(normalised)
+      setCustomers(unique)
       setLoading(false)
     }
     load()
   }, [])
+
+  // Helper: resolve display name — prefer linked profile, fall back to contact fields
+  const getName = (c) => c.profiles?.full_name || c.contact_name || 'Unknown'
+  const getEmail = (c) => c.profiles?.email || c.contact_email || ''
+  const getPhone = (c) => c.profiles?.phone || c.contact_phone || ''
 
   const active = customers.filter(c => !['completed', 'cancelled'].includes(c.status)).length
   const completed = customers.filter(c => c.status === 'completed').length
@@ -60,15 +59,14 @@ export default function AdminCustomers() {
 
   const filtered = search
     ? customers.filter(c =>
-        c.display_name?.toLowerCase().includes(search.toLowerCase()) ||
-        c.display_email?.toLowerCase().includes(search.toLowerCase()) ||
+        getName(c).toLowerCase().includes(search.toLowerCase()) ||
+        getEmail(c).toLowerCase().includes(search.toLowerCase()) ||
         c.building_type?.toLowerCase().includes(search.toLowerCase())
       )
     : customers
 
   const STATUS_COLOR = {
-    pending: 'pending', reviewed: 'lead', quote_sent: 'partial',
-    visit_scheduled: 'visit', visit_complete: 'partial',
+    pending: 'pending', visit_scheduled: 'visit', visit_complete: 'partial',
     measurement_done: 'lead', drawing_in_progress: 'visit', drawing_review: 'partial',
     drawing_ready: 'design', completed: 'paid', cancelled: 'pending',
   }
@@ -113,12 +111,17 @@ export default function AdminCustomers() {
               {filtered.map((c, i) => (
                 <div key={c.id} className="admin-customer-card" style={{ '--card-delay': `${i * 50}ms` }}>
                   <div className="admin-customer-avatar">
-                    {(c.display_name || 'C').charAt(0).toUpperCase()}
+                    {c.profiles?.avatar_url
+                      ? <img src={c.profiles.avatar_url} alt={getName(c)} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                      : (getName(c)).charAt(0).toUpperCase()
+                    }
                   </div>
                   <div className="admin-customer-info">
-                    <strong>{c.display_name}</strong>
+                    <strong>{getName(c)}</strong>
                     <span>{c.building_type?.replace(/_/g, ' ') || '—'}</span>
-                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)' }}>{c.display_phone || c.display_email || ''}</span>
+                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)' }}>
+                      {getPhone(c) || getEmail(c)}
+                    </span>
                   </div>
                   <span className={`admin-status ${STATUS_COLOR[c.status] || 'pending'}`}>
                     {(c.status || '').replace(/_/g, ' ')}
