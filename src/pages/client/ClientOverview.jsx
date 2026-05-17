@@ -104,7 +104,7 @@ export default function ClientOverview() {
           <div style={{ padding: '2.5rem', textAlign: 'center' }}>
             <ClipboardList size={32} style={{ color: 'var(--color-text-faint)', margin: '0 auto 0.75rem' }} />
             <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginBottom: '1rem' }}>No orders yet</p>
-            <button onClick={() => navigate('/professional-design')} style={{ padding: '0.55rem 1.25rem', background: 'var(--color-primary)', color: '#fff', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: 'var(--text-sm)', cursor: 'pointer' }}>
+            <button onClick={() => navigate('/get-professional-design')} style={{ padding: '0.55rem 1.25rem', background: 'var(--color-primary)', color: '#fff', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: 'var(--text-sm)', cursor: 'pointer' }}>
               Request a Design
             </button>
           </div>
