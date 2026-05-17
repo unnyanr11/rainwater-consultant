@@ -3,18 +3,22 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CloudRain, Droplets, ArrowRight, RotateCcw, Loader2 } from 'lucide-react'
 
+
 import RippleButton        from '../../../components/motion/RippleButton'
 import LiquidMeter         from '../../../components/motion/LiquidMeter'
 import RainfallTrendChart  from '../../../components/charts/RainfallTrendChart'
 import ScenarioPicker      from '../../../components/charts/ScenarioPicker'
 import CitySearchInput     from '../../calculator/CitySearchInput'
 
+
 import { useRoofTypes }             from '../../../hooks/useRoofTypes'
 import { useCityRainfallBreakdown } from '../../../hooks/useCityRainfallBreakdown'
+
 
 const CO2_PER_LITRE     = 0.0003
 const WATER_RATE_PER_KL = 45
 const SQFT_TO_SQM       = 0.0929
+
 
 function AnimatedNumber({ value, unit = '' }) {
   const [display, setDisplay] = useState(0)
@@ -35,6 +39,7 @@ function AnimatedNumber({ value, unit = '' }) {
 }
 
 
+
 const inputStyle = {
   width: '100%',
   padding: 'var(--space-3) var(--space-4)',
@@ -47,6 +52,7 @@ const inputStyle = {
   transition: 'border-color 180ms, box-shadow 180ms',
 }
 
+
 const labelStyle = {
   display: 'block',
   fontSize: 'var(--text-xs)',
@@ -57,9 +63,11 @@ const labelStyle = {
   marginBottom: 'var(--space-2)',
 }
 
+
 export default function ClientCalculator() {
   const navigate  = useNavigate()
   const { roofTypes, loading: roofLoading } = useRoofTypes()
+
 
   /* ── form state ── */
   const [form, setForm] = useState({ roofType: '', roofArea: '', unit: 'sqft' })
@@ -68,17 +76,20 @@ export default function ClientCalculator() {
   const [result,           setResult]           = useState(null)
   const [calculating,      setCalculating]      = useState(false)
 
+
   /* ── rainfall data ── */
   const {
     breakdown, annualMm,
     loading: rainfallLoading, error: rainfallError,
   } = useCityRainfallBreakdown(selectedCity?.id ?? null)
 
+
   /* ── set default roof type once loaded ── */
   useEffect(() => {
     if (roofTypes.length && !form.roofType)
       setForm(f => ({ ...f, roofType: roofTypes[0].id }))
   }, [roofTypes, form.roofType])
+
 
   /* ── calculate ── */
   const calculate = useCallback(() => {
@@ -100,12 +111,14 @@ export default function ClientCalculator() {
     setCalculating(false)
   }
 
+
   const handleReset = () => {
     setForm({ roofType: roofTypes[0]?.id || '', roofArea: '', unit: 'sqft' })
     setSelectedCity(null)
     setCityDisplayName('')
     setResult(null)
   }
+
 
   const handleGetDesign = useCallback(() => {
     if (!cityDisplayName && !selectedCity && !result) return navigate('/client/request-design')
@@ -119,7 +132,8 @@ export default function ClientCalculator() {
         },
       },
     })
-  }, [navigate, cityDisplayName, selectedCity, result, form.roofArea])
+  }, [navigate, cityDisplayName, selectedCity, result, form.roofArea, form.unit])
+
 
   return (
     <>
@@ -135,7 +149,9 @@ export default function ClientCalculator() {
         .unit-toggle button:last-child  { border-radius:0 var(--radius-md) var(--radius-md) 0; }
       `}</style>
 
+
       <div>
+
 
         {/* Hero */}
         <section style={{
@@ -168,6 +184,7 @@ export default function ClientCalculator() {
           </div>
         </section>
 
+
         {/* ── Main content ── */}
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{
@@ -176,6 +193,7 @@ export default function ClientCalculator() {
             gap: 'var(--space-8)',
             alignItems: 'start',
           }}>
+
 
             {/* ─ Left: Inputs ─ */}
             <div style={{
@@ -189,6 +207,7 @@ export default function ClientCalculator() {
               <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, color: 'var(--color-text)', marginBottom: 0 }}>
                 Your details
               </h2>
+
 
               {/* City */}
               <div>
@@ -210,6 +229,7 @@ export default function ClientCalculator() {
                   </p>
                 )}
               </div>
+
 
               {/* Roof type */}
               <div>
@@ -233,6 +253,7 @@ export default function ClientCalculator() {
                 )}
               </div>
 
+
               {/* Roof area */}
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-2)' }}>
@@ -249,6 +270,7 @@ export default function ClientCalculator() {
                   style={inputStyle}
                 />
               </div>
+
 
               {/* Buttons */}
               <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
@@ -282,6 +304,7 @@ export default function ClientCalculator() {
                 )}
               </div>
 
+
               {/* Liquid meter */}
               {result && (
                 <div style={{ marginTop: 'var(--space-2)' }}>
@@ -289,6 +312,7 @@ export default function ClientCalculator() {
                 </div>
               )}
             </div>
+
 
             {/* ─ Right: Results ─ */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
@@ -312,6 +336,7 @@ export default function ClientCalculator() {
                   </motion.div>
                 )}
 
+
                 {result && (
                   <motion.div
                     key="results"
@@ -321,9 +346,9 @@ export default function ClientCalculator() {
                   >
                     {/* Stat cards */}
                     {[
-                      { label: 'Annual Harvest',  value: result.litres,   unit: ' L', color: 'var(--color-primary)',  bg: '#e8f4fd' },
-                      { label: 'Cost Saved/yr',   value: result.costSaved, unit: '',  color: '#1a7a3a',             bg: '#e6f7ee', prefix: '₹' },
-                      { label: 'CO₂ Offset',      value: result.co2Saved,  unit: ' kg', color: '#7a5c1a',           bg: '#fdf6e3' },
+                      { label: 'Annual Harvest',  value: result.litres,    unit: ' L',  color: 'var(--color-primary)', bg: '#e8f4fd' },
+                      { label: 'Cost Saved/yr',   value: result.costSaved, unit: '',    color: '#1a7a3a',              bg: '#e6f7ee', prefix: '₹' },
+                      { label: 'CO₂ Offset',      value: result.co2Saved,  unit: ' kg', color: '#7a5c1a',             bg: '#fdf6e3' },
                     ].map(({ label, value, unit, color, bg, prefix = '' }) => (
                       <div key={label} style={{
                         background: bg,
@@ -337,6 +362,7 @@ export default function ClientCalculator() {
                         </span>
                       </div>
                     ))}
+
 
                     {/* CTA */}
                     <button
@@ -357,10 +383,12 @@ export default function ClientCalculator() {
                 )}
               </AnimatePresence>
 
+
               {/* Scenario picker */}
               {selectedCity && (
                 <ScenarioPicker cityId={selectedCity.id} />
               )}
+
 
               {/* Rainfall chart */}
               {breakdown && breakdown.length > 0 && (
