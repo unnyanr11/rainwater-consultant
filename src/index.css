@@ -1,8 +1,9 @@
 /* ── Fonts ─────────────────────────────────────────────────────────────────── */
 @import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&f[]=cabinet-grotesk@700,800&display=swap');
 
-/* ── Design Tokens ─────────────────────────────────────────────────────────── */
-:root, [data-theme="light"] {
+/* ── LIGHT THEME — white + light shades of blue, black text ────────────────── */
+:root,
+[data-theme="light"] {
   /* Fonts */
   --font-body:    'Satoshi', 'Inter', sans-serif;
   --font-display: 'Cabinet Grotesk', 'Satoshi', sans-serif;
@@ -32,35 +33,36 @@
   --space-24: 6rem;
   --space-32: 8rem;
 
-  /* Surfaces — warm white */
-  --color-bg:               #f7f6f2;
-  --color-surface:          #f9f8f5;
-  --color-surface-2:        #fbfbf9;
-  --color-surface-offset:   #f3f0ec;
-  --color-surface-offset-2: #edeae5;
-  --color-surface-dynamic:  #e6e4df;
-  --color-divider:          #dcd9d5;
-  --color-border:           #d4d1ca;
+  /* Surfaces — pure white → light blue progression */
+  --color-bg:               #ffffff;
+  --color-surface:          #ffffff;
+  --color-surface-2:        #f0f8ff;
+  --color-surface-offset:   #e0f0fb;
+  --color-surface-offset-2: #cce6f7;
+  --color-surface-dynamic:  #b3d9f2;
+  --color-divider:          rgba(11, 111, 184, 0.10);
+  --color-border:           rgba(11, 111, 184, 0.15);
 
-  /* Text */
-  --color-text:         #28251d;
-  --color-text-muted:   #7a7974;
-  --color-text-faint:   #bab9b4;
-  --color-text-inverse: #f9f8f4;
+  /* Text — black + dark navy */
+  --color-text:         #0a0f14;
+  --color-text-muted:   #3a5369;
+  --color-text-faint:   #7a9bb5;
+  --color-text-inverse: #ffffff;
 
   /* Primary — water blue */
   --color-primary:           #0b6fb8;
-  --color-primary-hover:     #095d9c;
+  --color-primary-hover:     #0959961;
+  --color-primary-hover:     #095996;
   --color-primary-active:    #074a7e;
   --color-primary-highlight: #daeaf7;
 
   /* Status */
-  --color-success:           #437a22;
-  --color-success-hover:     #2e5c10;
-  --color-success-highlight: #d4dfcc;
-  --color-warning:           #964219;
-  --color-warning-highlight: #ddcfc6;
-  --color-error:             #b91c1c;
+  --color-success:           #166534;
+  --color-success-hover:     #14532d;
+  --color-success-highlight: #dcfce7;
+  --color-warning:           #92400e;
+  --color-warning-highlight: #fef3c7;
+  --color-error:             #991b1b;
   --color-error-highlight:   #fee2e2;
 
   /* Radius */
@@ -70,40 +72,106 @@
   --radius-xl:   1rem;
   --radius-full: 9999px;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px oklch(0.2 0.01 80 / 0.06);
-  --shadow-md: 0 4px 12px oklch(0.2 0.01 80 / 0.08);
-  --shadow-lg: 0 12px 32px oklch(0.2 0.01 80 / 0.12);
+  /* Shadows — blue-tinted */
+  --shadow-sm: 0 1px 3px rgba(11,111,184,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 16px rgba(11,111,184,0.10), 0 2px 6px rgba(0,0,0,0.05);
+  --shadow-lg: 0 12px 40px rgba(11,111,184,0.14), 0 4px 12px rgba(0,0,0,0.06);
 
   /* Transitions */
   --transition-interactive: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-fast: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-slow: 500ms cubic-bezier(0.16, 1, 0.3, 1);
 
   /* Content widths */
   --content-narrow:  640px;
   --content-default: 960px;
   --content-wide:    1200px;
+
+  /* Gradients */
+  --gradient-page:
+    radial-gradient(circle at top left, rgba(186,230,255,0.6), transparent 30%),
+    radial-gradient(circle at 80% 10%, rgba(147,211,253,0.3), transparent 22%),
+    linear-gradient(180deg, #ffffff 0%, #f0f8ff 50%, #ffffff 100%);
+  --gradient-water:
+    linear-gradient(135deg, #0b6fb8 0%, #1e88d7 38%, #52b5e8 70%, #7dd3fc 100%);
+  --glass-bg:     rgba(255,255,255,0.72);
+  --glass-border: rgba(255,255,255,0.55);
 }
 
-/* ── Dark mode ──────────────────────────────────────────────────────────────── */
-[data-theme="dark"],
-@media (prefers-color-scheme: dark) { :root:not([data-theme]) {
-  --color-bg:               #06141f;
-  --color-surface:          #0a1d2c;
-  --color-surface-2:        #10273b;
-  --color-surface-offset:   #14334d;
-  --color-surface-offset-2: #1d4665;
-  --color-surface-dynamic:  #255d85;
-  --color-divider:          rgba(233,247,255,0.08);
-  --color-border:           rgba(233,247,255,0.12);
-  --color-text:             #e9f7ff;
-  --color-text-muted:       #a7c7dc;
-  --color-text-faint:       #7394ab;
-  --color-text-inverse:     #071521;
-  --color-primary:          #5ab8ff;
-  --color-primary-hover:    #85ccff;
-  --color-primary-active:   #3fa8f3;
-  --color-primary-highlight:rgba(90,184,255,0.16);
-}}
+/* ── DARK THEME — black + dark shades of blue, white text ──────────────────── */
+[data-theme="dark"] {
+  --color-bg:               #000000;
+  --color-surface:          #060e18;
+  --color-surface-2:        #0d1e30;
+  --color-surface-offset:   #122840;
+  --color-surface-offset-2: #1a3554;
+  --color-surface-dynamic:  #234872;
+  --color-divider:          rgba(147,210,255,0.08);
+  --color-border:           rgba(147,210,255,0.14);
+
+  /* Text — pure white + light blue shades */
+  --color-text:         #ffffff;
+  --color-text-muted:   #93c5e8;
+  --color-text-faint:   #5b8db0;
+  --color-text-inverse: #000000;
+
+  /* Primary — bright sky blue on dark */
+  --color-primary:           #60b8f5;
+  --color-primary-hover:     #89ceff;
+  --color-primary-active:    #45a6ee;
+  --color-primary-highlight: rgba(96,184,245,0.15);
+
+  /* Status */
+  --color-success:           #4ade80;
+  --color-success-hover:     #22c55e;
+  --color-success-highlight: rgba(74,222,128,0.12);
+  --color-warning:           #fbbf24;
+  --color-warning-highlight: rgba(251,191,36,0.12);
+  --color-error:             #f87171;
+  --color-error-highlight:   rgba(248,113,113,0.12);
+
+  /* Shadows — deep dark */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.4),  0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.45), 0 2px 6px rgba(96,184,245,0.06);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.55), 0 4px 12px rgba(96,184,245,0.08);
+
+  /* Gradients */
+  --gradient-page:
+    radial-gradient(circle at top left, rgba(18,40,64,0.9), transparent 28%),
+    radial-gradient(circle at 80% 0%, rgba(35,72,114,0.5), transparent 24%),
+    linear-gradient(180deg, #000000 0%, #060e18 45%, #000000 100%);
+  --gradient-water:
+    linear-gradient(135deg, #1a3554 0%, #234872 38%, #2e6099 70%, #4080c0 100%);
+  --glass-bg:     rgba(6,14,24,0.65);
+  --glass-border: rgba(147,210,255,0.10);
+}
+
+/* System preference fallback (when no data-theme is set yet) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --color-bg:               #000000;
+    --color-surface:          #060e18;
+    --color-surface-2:        #0d1e30;
+    --color-surface-offset:   #122840;
+    --color-surface-offset-2: #1a3554;
+    --color-surface-dynamic:  #234872;
+    --color-divider:          rgba(147,210,255,0.08);
+    --color-border:           rgba(147,210,255,0.14);
+    --color-text:             #ffffff;
+    --color-text-muted:       #93c5e8;
+    --color-text-faint:       #5b8db0;
+    --color-text-inverse:     #000000;
+    --color-primary:          #60b8f5;
+    --color-primary-hover:    #89ceff;
+    --color-primary-active:   #45a6ee;
+    --color-primary-highlight:rgba(96,184,245,0.15);
+    --color-error:            #f87171;
+    --color-error-highlight:  rgba(248,113,113,0.12);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.4),  0 1px 2px rgba(0,0,0,0.3);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.45), 0 2px 6px rgba(96,184,245,0.06);
+    --shadow-lg: 0 12px 40px rgba(0,0,0,0.55), 0 4px 12px rgba(96,184,245,0.08);
+  }
+}
 
 /* ── Base reset ─────────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -119,10 +187,11 @@ html {
 body {
   min-height: 100dvh;
   line-height: 1.6;
-  font-family: var(--font-body);
+  font-family: var(--font-body, 'Satoshi', sans-serif);
   font-size: var(--text-base);
   color: var(--color-text);
   background-color: var(--color-bg);
+  transition: background-color 220ms ease, color 220ms ease;
 }
 
 img, video, canvas, svg { display: block; max-width: 100%; height: auto; }
@@ -180,7 +249,7 @@ table  { border-collapse: collapse; width: 100%; }
 }
 
 .text-gradient {
-  background: linear-gradient(135deg, #0b6fb8, #52b5e8);
+  background: var(--gradient-water);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
