@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
-import { ClipboardList, ArrowRight, MapPin, StatusBadge } from 'lucide-react'
+import { ClipboardList, ArrowRight, MapPin, BadgeCheck } from 'lucide-react'
 
-// reuse StatusBadge from above (move to a shared component or copy it here)
+// reuse BadgeCheck from above (move to a shared component or copy it here)
 
 export default function ClientOrders() {
   const { user } = useAuth()
@@ -61,7 +61,7 @@ export default function ClientOrders() {
                 )}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <StatusBadge status={o.status} />
+                <BadgeCheck status={o.status} />
                 <ArrowRight size={14} style={{ color: 'var(--color-text-faint)' }} />
               </div>
             </div>

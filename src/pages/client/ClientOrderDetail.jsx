@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import { ArrowLeft, FileText, Download, StatusBadge } from 'lucide-react'
+import { ArrowLeft, FileText, Download, BadgeCheck } from 'lucide-react'
 
 export default function ClientOrderDetail() {
   const { id } = useParams()
@@ -52,7 +52,7 @@ export default function ClientOrderDetail() {
             Order ID: {order.id.slice(0, 8).toUpperCase()}
           </p>
         </div>
-        <StatusBadge status={order.status} />
+        <BadgeCheck status={order.status} />
       </div>
 
       {/* Details */}
@@ -102,7 +102,7 @@ export default function ClientOrderDetail() {
                 {new Date(l.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
               </div>
               <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text)' }}>
-                <StatusBadge status={l.new_status} />
+                <BadgeCheck status={l.new_status} />
                 {l.note && <span style={{ color: 'var(--color-text-muted)', marginLeft: 8 }}>{l.note}</span>}
               </div>
             </div>

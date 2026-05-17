@@ -19,7 +19,7 @@ const STATUS_COLOR = {
   drawing_ready:    { bg: '#d1fae5', text: '#065f46' },
 }
 
-function StatusBadge({ status }) {
+function BadgeCheck({ status }) {
   const c = STATUS_COLOR[status] || { bg: 'var(--color-surface-offset)', text: 'var(--color-text-muted)' }
   return (
     <span style={{
@@ -121,7 +121,7 @@ export default function ClientOverview() {
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <StatusBadge status={o.status} />
+              <BadgeCheck status={o.status} />
               <ArrowRight size={14} style={{ color: 'var(--color-text-faint)' }} />
             </div>
           </div>
