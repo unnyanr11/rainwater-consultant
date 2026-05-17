@@ -10,6 +10,8 @@ const NAV = [
   { to: '/client/orders',   label: 'My Orders', icon: ClipboardList },
   { to: '/client/payments', label: 'Payments',  icon: CreditCard },
   { to: '/client/profile',  label: 'Profile',   icon: UserCircle },
+  { to: '/client/request-lecture', label: 'Request Lecture', icon: Droplets },
+  { to: '/client/support', label: 'Support',   icon: UserCircle },
 ]
 
 export default function ClientDashboard() {
