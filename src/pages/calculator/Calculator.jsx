@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CloudRain, Droplets, ArrowRight, RotateCcw, Loader2 } from 'lucide-react'
 
@@ -61,8 +61,14 @@ const labelStyle = {
 
 export default function Calculator() {
   const navigate = useNavigate()
+  const location = useLocation()
+
+  // When rendered as a nested route under /client, hide the public navbar.
+  // ClientDashboard already provides its own sidebar + header.
+  const isClientRoute = location.pathname.startsWith('/client')
+
   const [selectedCity, setSelectedCity] = useState(null)
-const { data: roofTypes } = useRoofTypes()
+  const { data: roofTypes } = useRoofTypes()
   const [form,             setForm]         = useState({ roofArea: '', roofTypeId: '', areaUnit: 'sqm' })
   const [selectedScenario, setSelectedScenario] = useState('average')
   const [result,           setResult]       = useState(null)
@@ -76,8 +82,6 @@ const { data: roofTypes } = useRoofTypes()
   useEffect(() => {
     if (roofTypes.length && !form.roofTypeId) update('roofTypeId', roofTypes[0].id)
   }, [roofTypes, form.roofTypeId, update])
-
-
 
   useEffect(() => {
     setSelectedScenario('average'); setResult(null); setCalculated(false)
@@ -133,9 +137,10 @@ const { data: roofTypes } = useRoofTypes()
         .unit-toggle button:last-child  { border-radius:0 var(--radius-md) var(--radius-md) 0; }
       `}</style>
 
-      <Navbar />
+      {/* Only render public Navbar on the public /calculator route */}
+      {!isClientRoute && <Navbar />}
 
-      <div style={{ paddingTop: '64px' }}>
+      <div style={{ paddingTop: isClientRoute ? '0' : '64px' }}>
 
         {/* Hero */}
         <section style={{
