@@ -7,17 +7,19 @@ import AdminEmptyState from '../../components/admin/AdminEmptyState'
 import PageTransition from '../../components/motion/PageTransition'
 
 const STAGE_COLORS = {
-  deposit_paid:   'lead',
-  in_progress:    'visit',
-  drawings_ready: 'paid',
-  completed:      'paid',
+  measurement_done: 'lead',
+  drawing_in_progress: 'visit',
+  drawing_review: 'partial',
+  drawing_ready: 'paid',
+  completed: 'paid',
 }
 
 const STAGE_LABELS = {
-  deposit_paid:   'Ready to draft',
-  in_progress:    'In progress',
-  drawings_ready: 'Ready to release',
-  completed:      'Completed',
+  measurement_done: 'Ready to draft',
+  drawing_in_progress: 'In progress',
+  drawing_review: 'Under review',
+  drawing_ready: 'Ready',
+  completed: 'Completed',
 }
 
 export default function AdminDesigns() {
@@ -29,8 +31,8 @@ export default function AdminDesigns() {
     async function load() {
       const { data } = await supabase
         .from('design_orders')
-        .select('id, contact_name, building_type, status, admin_notes, visit_note, quoted_amount, city, created_at')
-        .in('status', ['deposit_paid', 'in_progress', 'drawings_ready', 'completed'])
+        .select('id, contact_name, building_type, status, message, created_at')
+        .in('status', ['measurement_done', 'drawing_in_progress', 'drawing_review', 'drawing_ready', 'completed'])
         .order('created_at', { ascending: false })
       setDesigns(data || [])
       setLoading(false)
@@ -41,10 +43,10 @@ export default function AdminDesigns() {
   const byStage = (s) => designs.filter(d => d.status === s)
 
   const stats = [
-    { label: 'In queue',          value: String(byStage('deposit_paid').length).padStart(2,'0'),   sub: 'Ready to draft' },
-    { label: 'In progress',       value: String(byStage('in_progress').length).padStart(2,'0'),    sub: 'Active drawing' },
-    { label: 'Ready to release',  value: String(byStage('drawings_ready').length).padStart(2,'0'), sub: 'Final approved', trend: 3 },
-    { label: 'Completed',         value: String(byStage('completed').length).padStart(2,'0'),      sub: 'Archived' },
+    { label: 'In queue', value: String(designs.filter(d => d.status === 'measurement_done').length).padStart(2,'0'), sub: 'Ready to draft' },
+    { label: 'In progress', value: String(designs.filter(d => d.status === 'drawing_in_progress').length).padStart(2,'0'), sub: 'Active drawing' },
+    { label: 'Under review', value: String(designs.filter(d => d.status === 'drawing_review').length).padStart(2,'0'), sub: 'Awaiting approval' },
+    { label: 'Ready to release', value: String(designs.filter(d => d.status === 'drawing_ready').length).padStart(2,'0'), sub: 'Final approved', trend: 3 },
   ]
 
   if (loading) return (
@@ -81,14 +83,14 @@ export default function AdminDesigns() {
                     <span className="admin-kanban-count">{byStage(status).length}</span>
                   </div>
                   <div className="admin-design-cards">
-                    {byStage(status).length === 0 && <div className="admin-design-empty">Empty lane</div>}
+                    {byStage(status).length === 0 && (
+                      <div className="admin-design-empty">Empty lane</div>
+                    )}
                     {byStage(status).map((d, i) => (
                       <div key={d.id} className="admin-design-card" style={{ '--card-delay': `${i * 60}ms` }}>
                         <strong>{d.contact_name || 'Client'}</strong>
-                        <span>{(d.building_type || '—').replace(/_/g, ' ')}</span>
-                        {d.city && <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>{d.city}</span>}
-                        {d.quoted_amount && <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-primary)' }}>₹{Number(d.quoted_amount).toLocaleString('en-IN')}</span>}
-                        {(d.admin_notes || d.visit_note) && <p className="admin-design-note">{d.admin_notes || d.visit_note}</p>}
+                        <span>{d.building_type || '—'}</span>
+                        {d.message && <p className="admin-design-note">{d.message}</p>}
                         <small>{new Date(d.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</small>
                       </div>
                     ))}
@@ -99,18 +101,17 @@ export default function AdminDesigns() {
           ) : (
             <article className="admin-card admin-table-card admin-stagger-in">
               {designs.length === 0 ? (
-                <AdminEmptyState icon="✏️" title="No designs in queue" body="Start by marking an order as deposit paid." />
+                <AdminEmptyState icon="✏️" title="No designs in queue" body="Start by adding a measurement-done order." />
               ) : (
                 <table className="admin-table">
-                  <thead><tr><th>Client</th><th>Building type</th><th>City</th><th>Quoted</th><th>Stage</th><th>Date</th></tr></thead>
+                  <thead><tr><th>Client</th><th>Project</th><th>Stage</th><th>Notes</th><th>Date</th></tr></thead>
                   <tbody>
                     {designs.map((d, i) => (
                       <tr key={d.id} className="admin-table-row" style={{ '--row-delay': `${i * 40}ms` }}>
                         <td><strong>{d.contact_name || '—'}</strong></td>
-                        <td><span>{(d.building_type || '—').replace(/_/g, ' ')}</span></td>
-                        <td><span>{d.city || '—'}</span></td>
-                        <td><strong>{d.quoted_amount ? `₹${Number(d.quoted_amount).toLocaleString('en-IN')}` : '—'}</strong></td>
+                        <td><span>{d.building_type || '—'}</span></td>
                         <td><span className={`admin-status ${STAGE_COLORS[d.status] || 'pending'}`}>{STAGE_LABELS[d.status] || d.status}</span></td>
+                        <td><span style={{ maxWidth: '22ch', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.message || '—'}</span></td>
                         <td><span>{new Date(d.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span></td>
                       </tr>
                     ))}

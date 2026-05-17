@@ -15,7 +15,7 @@ export default function AdminPayments() {
     async function load() {
       const { data } = await supabase
         .from('order_payments')
-        .select('id, amount_inr, payment_status, payment_type, paid_at, transaction_id, gateway, created_at, design_orders(contact_name, building_type, status, city)')
+        .select('id, amount_inr, payment_status, created_at, design_orders(contact_name, building_type, status)')
         .order('created_at', { ascending: false })
       setPayments(data || [])
       setLoading(false)
@@ -24,18 +24,19 @@ export default function AdminPayments() {
   }, [])
 
   const totalCollected = payments.filter(p => p.payment_status === 'paid').reduce((s, p) => s + (p.amount_inr || 0), 0)
-  const totalPending   = payments.filter(p => p.payment_status === 'pending').reduce((s, p) => s + (p.amount_inr || 0), 0)
-  const totalFailed    = payments.filter(p => p.payment_status === 'failed').reduce((s, p) => s + (p.amount_inr || 0), 0)
+  const totalPending = payments.filter(p => p.payment_status === 'pending').reduce((s, p) => s + (p.amount_inr || 0), 0)
+  const totalPartial = payments.filter(p => p.payment_status === 'partial').reduce((s, p) => s + (p.amount_inr || 0), 0)
   const fmt = (n) => n >= 100000 ? `₹${(n / 100000).toFixed(2)}L` : `₹${(n / 1000).toFixed(1)}K`
 
   const stats = [
     { label: 'Total collected', value: fmt(totalCollected), sub: `${payments.filter(p => p.payment_status === 'paid').length} payments`, trend: 8 },
     { label: 'Pending recovery', value: fmt(totalPending), sub: `${payments.filter(p => p.payment_status === 'pending').length} accounts` },
-    { label: 'Failed / refunded', value: fmt(totalFailed), sub: `${payments.filter(p => ['failed','refunded'].includes(p.payment_status)).length} records` },
+    { label: 'Partial payments', value: fmt(totalPartial), sub: `${payments.filter(p => p.payment_status === 'partial').length} accounts` },
     { label: 'Collection ratio', value: payments.length ? `${Math.round((payments.filter(p => p.payment_status === 'paid').length / payments.length) * 100)}%` : '—', sub: 'Paid / total', trend: 5 },
   ]
 
   const filtered = filter === 'all' ? payments : payments.filter(p => p.payment_status === filter)
+
   const collectionPct = payments.length ? (payments.filter(p => p.payment_status === 'paid').length / payments.length) * 100 : 0
 
   if (loading) return (
@@ -53,7 +54,7 @@ export default function AdminPayments() {
           <AdminPageHeader
             eyebrow="Payments"
             title={<>Revenue &amp; payment<br />tracking.</>}
-            subtitle="Monitor collections, pending dues, and failed transactions across all client accounts."
+            subtitle="Monitor collections, pending dues, and partial payments across all client accounts."
             actions={<>
               <button className="admin-btn secondary">Download statement</button>
               <button className="admin-btn primary">Record payment</button>
@@ -62,6 +63,7 @@ export default function AdminPayments() {
 
           <AdminStatRow stats={stats} />
 
+          {/* Collection progress bar */}
           <article className="admin-card admin-panel admin-stagger-in">
             <div className="admin-section-head">
               <div><h3>Collection health</h3><p>Breakdown by payment status.</p></div>
@@ -71,9 +73,9 @@ export default function AdminPayments() {
             </div>
             <div className="admin-health-bars">
               {[
-                { label: 'Paid',     count: payments.filter(p => p.payment_status === 'paid').length,    cls: 'paid',    pct: collectionPct },
-                { label: 'Pending',  count: payments.filter(p => p.payment_status === 'pending').length, cls: 'pending', pct: payments.length ? (payments.filter(p => p.payment_status === 'pending').length / payments.length) * 100 : 0 },
-                { label: 'Failed',   count: payments.filter(p => p.payment_status === 'failed').length,  cls: 'lead',    pct: payments.length ? (payments.filter(p => p.payment_status === 'failed').length / payments.length) * 100 : 0 },
+                { label: 'Paid', count: payments.filter(p => p.payment_status === 'paid').length, cls: 'paid', pct: collectionPct },
+                { label: 'Partial', count: payments.filter(p => p.payment_status === 'partial').length, cls: 'partial', pct: payments.length ? (payments.filter(p => p.payment_status === 'partial').length / payments.length) * 100 : 0 },
+                { label: 'Pending', count: payments.filter(p => p.payment_status === 'pending').length, cls: 'pending', pct: payments.length ? (payments.filter(p => p.payment_status === 'pending').length / payments.length) * 100 : 0 },
               ].map((b, i) => (
                 <div key={i} className="admin-health-bar-row">
                   <div className="admin-health-label">
@@ -88,8 +90,9 @@ export default function AdminPayments() {
             </div>
           </article>
 
+          {/* Filter tabs */}
           <div className="admin-filter-tabs">
-            {['all', 'paid', 'pending', 'failed', 'refunded'].map(f => (
+            {['all', 'paid', 'partial', 'pending'].map(f => (
               <button
                 key={f}
                 className={`admin-filter-tab ${filter === f ? 'active' : ''}`}
@@ -103,6 +106,7 @@ export default function AdminPayments() {
             ))}
           </div>
 
+          {/* Payments table */}
           <article className="admin-card admin-table-card admin-stagger-in">
             <div className="admin-section-head">
               <div><h3>Payment register</h3><p>{filtered.length} records</p></div>
@@ -115,30 +119,25 @@ export default function AdminPayments() {
                   <tr>
                     <th>Client</th>
                     <th>Project</th>
-                    <th>Type</th>
+                    <th>Work stage</th>
                     <th>Amount</th>
                     <th>Status</th>
-                    <th>Gateway</th>
-                    <th>Paid on</th>
+                    <th>Date</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((p, i) => (
                     <tr key={p.id} className="admin-table-row" style={{ '--row-delay': `${i * 40}ms` }}>
-                      <td>
-                        <strong>{p.design_orders?.contact_name || '—'}</strong>
-                        <span style={{ display: 'block', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>{p.design_orders?.city || ''}</span>
-                      </td>
-                      <td><span>{(p.design_orders?.building_type || '—').replace(/_/g, ' ')}</span></td>
-                      <td><span style={{ textTransform: 'capitalize' }}>{p.payment_type || '—'}</span></td>
+                      <td><strong>{p.design_orders?.contact_name || '—'}</strong></td>
+                      <td><span>{p.design_orders?.building_type || '—'}</span></td>
+                      <td><span>{(p.design_orders?.status || '—').replace(/_/g, ' ')}</span></td>
                       <td><strong>₹{(p.amount_inr || 0).toLocaleString('en-IN')}</strong></td>
                       <td>
-                        <span className={`admin-status ${ p.payment_status === 'paid' ? 'paid' : p.payment_status === 'failed' ? 'lead' : p.payment_status === 'refunded' ? 'partial' : 'pending'}`}>
+                        <span className={`admin-status ${p.payment_status === 'paid' ? 'paid' : p.payment_status === 'partial' ? 'partial' : 'pending'}`}>
                           {p.payment_status}
                         </span>
                       </td>
-                      <td><span>{p.gateway || '—'}</span></td>
-                      <td><span>{p.paid_at ? new Date(p.paid_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</span></td>
+                      <td><span>{new Date(p.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span></td>
                     </tr>
                   ))}
                 </tbody>
