@@ -13,6 +13,11 @@ import Login               from './pages/auth/Login'
 import VerifyEmail         from './pages/auth/VerifyEmail'
 import ForgotPassword      from './pages/auth/ForgotPassword'
 import ClientDashboard     from './pages/client/ClientDashboard'
+import ClientOverview      from './pages/client/ClientOverview'
+import ClientOrders        from './pages/client/ClientOrders'
+import ClientOrderDetail   from './pages/client/ClientOrderDetail'
+import ClientPayments      from './pages/client/ClientPayments'
+import ClientProfile       from './pages/client/ClientProfile'
 import AdminDashboard      from './pages/admin/Dashboard'
 import AdminVisits         from './pages/admin/SiteVisits'
 import AdminPayments       from './pages/admin/Payments'
@@ -37,8 +42,14 @@ export default function App() {
           <Route path="/verify-email"              element={<VerifyEmail />} />
           <Route path="/forgot-password"           element={<ForgotPassword />} />
 
-          {/* Protected — client */}
-          <Route path="/client" element={<ProtectedRoute role="client"><ClientDashboard /></ProtectedRoute>} />
+          {/* Protected — client (nested) */}
+          <Route path="/client" element={<ProtectedRoute role="client"><ClientDashboard /></ProtectedRoute>}>
+            <Route index              element={<ClientOverview />} />
+            <Route path="orders"      element={<ClientOrders />} />
+            <Route path="orders/:id"  element={<ClientOrderDetail />} />
+            <Route path="payments"    element={<ClientPayments />} />
+            <Route path="profile"     element={<ClientProfile />} />
+          </Route>
 
           {/* Protected — admin */}
           <Route path="/admin"           element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
