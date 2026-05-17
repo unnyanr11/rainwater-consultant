@@ -49,7 +49,6 @@ export default function Navbar() {
           { label: 'Home',        href: '/'            },
           { label: 'Services',    href: '/services'    },
           { label: 'How It Works',href: '/how-it-works'},
-          { label: 'Pricing',     href: '/pricing'     },
           { label: 'Calculator',  href: '/calculator'  },
         ].map(({ label, href }) => (
           <Link key={label} to={href} style={{
