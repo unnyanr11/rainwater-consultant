@@ -19,7 +19,7 @@ import ClientOrderDetail   from './pages/client/ClientOrderDetail'
 import ClientPayments      from './pages/client/ClientPayments'
 import ClientProfile       from './pages/client/ClientProfile'
 import ClientCalculator    from './pages/client/ClientCalculator'
-import ClientRequestDesign from './pages/client/ClientRequestDesign'
+import ClientRequestLecture from './pages/client/ClientRequestLecture'
 import AdminDashboard      from './pages/admin/Dashboard'
 import AdminVisits         from './pages/admin/SiteVisits'
 import AdminPayments       from './pages/admin/Payments'
@@ -46,13 +46,13 @@ export default function App() {
 
           {/* Protected — client (nested) */}
           <Route path="/client" element={<ProtectedRoute role="client"><ClientDashboard /></ProtectedRoute>}>
-            <Route index                element={<ClientOverview />} />
-            <Route path="orders"        element={<ClientOrders />} />
-            <Route path="orders/:id"    element={<ClientOrderDetail />} />
-            <Route path="payments"      element={<ClientPayments />} />
-            <Route path="calculator"    element={<ClientCalculator />} />
-            <Route path="request-design" element={<ClientRequestDesign />} />
-            <Route path="profile"       element={<ClientProfile />} />
+            <Route index                   element={<ClientOverview />} />
+            <Route path="orders"           element={<ClientOrders />} />
+            <Route path="orders/:id"       element={<ClientOrderDetail />} />
+            <Route path="payments"         element={<ClientPayments />} />
+            <Route path="calculator"       element={<ClientCalculator />} />
+            <Route path="request-lecture"  element={<ClientRequestLecture />} />
+            <Route path="profile"          element={<ClientProfile />} />
           </Route>
 
           {/* Protected — admin */}
