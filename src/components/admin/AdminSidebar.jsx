@@ -1,5 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { useEffect, useRef } from 'react'
+import ThemeToggle from '../ui/ThemeToggle'
 
 const NAV = [
   {
@@ -95,17 +96,20 @@ export default function AdminSidebar() {
 
   return (
     <aside className="admin-sidebar">
-      <div className="admin-brand">
-        <div className="admin-brand-mark">
-          <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
-            <path d="M16 3 C16 3 6 14 6 20 a10 10 0 0 0 20 0 C26 14 16 3 16 3Z" fill="white" opacity="0.9"/>
-            <path d="M16 12 C16 12 11 18 11 22 a5 5 0 0 0 10 0 C21 18 16 12 16 12Z" fill="white" opacity="0.4"/>
-          </svg>
+      <div className="admin-brand" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+          <div className="admin-brand-mark">
+            <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
+              <path d="M16 3 C16 3 6 14 6 20 a10 10 0 0 0 20 0 C26 14 16 3 16 3Z" fill="white" opacity="0.9"/>
+              <path d="M16 12 C16 12 11 18 11 22 a5 5 0 0 0 10 0 C21 18 16 12 16 12Z" fill="white" opacity="0.4"/>
+            </svg>
+          </div>
+          <div className="admin-brand-text">
+            <small>Ops Console</small>
+            <h1>Field-first<br />Admin</h1>
+          </div>
         </div>
-        <div className="admin-brand-text">
-          <small>Ops Console</small>
-          <h1>Field-first<br />Admin</h1>
-        </div>
+        <ThemeToggle size="sm" />
       </div>
 
       <nav className="admin-nav" ref={navRef}>
