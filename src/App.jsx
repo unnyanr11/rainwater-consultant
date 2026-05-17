@@ -44,19 +44,19 @@ export default function App() {
           <Route path="/verify-email"              element={<VerifyEmail />} />
           <Route path="/forgot-password"           element={<ForgotPassword />} />
 
-          {/* Protected — client (nested layout) */}
+          {/* Protected - client (nested layout) */}
           <Route
             path="/client"
             element={<ProtectedRoute role="client"><ClientDashboard /></ProtectedRoute>}
           >
-            <Route index            element={<ClientOverview />} />
-            <Route path="orders"    element={<ClientOrders />} />
-            <Route path="orders/:id" element={<ClientOrderDetail />} />
-            <Route path="payments"  element={<ClientPayments />} />
-            <Route path="profile"   element={<ClientProfile />} />
+            <Route index              element={<ClientOverview />} />
+            <Route path="orders"      element={<ClientOrders />} />
+            <Route path="orders/:id"  element={<ClientOrderDetail />} />
+            <Route path="payments"    element={<ClientPayments />} />
+            <Route path="profile"     element={<ClientProfile />} />
           </Route>
 
-          {/* Protected — admin */}
+          {/* Protected - admin */}
           <Route path="/admin"           element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/visits"    element={<ProtectedRoute role="admin"><AdminVisits /></ProtectedRoute>} />
           <Route path="/admin/payments"  element={<ProtectedRoute role="admin"><AdminPayments /></ProtectedRoute>} />

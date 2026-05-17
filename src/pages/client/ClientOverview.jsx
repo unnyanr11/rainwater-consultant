@@ -37,7 +37,6 @@ export default function ClientOverview() {
 
   return (
     <div style={{ maxWidth: 860 }}>
-      {/* Greeting */}
       <div style={{ marginBottom: '2rem' }}>
         <h1 style={{ fontSize: 'var(--text-xl)', fontWeight: 800, color: 'var(--color-text)', marginBottom: 4 }}>
           Welcome back, {profile?.full_name?.split(' ')[0] || 'there'} 👋
@@ -50,9 +49,9 @@ export default function ClientOverview() {
       {/* KPI cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
         {[
-          { label: 'Total Orders',    value: orders.length,    icon: ClipboardList, action: () => navigate('/client/orders') },
+          { label: 'Total Orders',    value: orders.length,       icon: ClipboardList, action: () => navigate('/client/orders') },
           { label: 'Active Orders',   value: activeOrders.length, icon: ClipboardList, action: () => navigate('/client/orders') },
-          { label: 'Calculator Uses', value: sessions,          icon: Calculator,    action: () => navigate('/calculator') },
+          { label: 'Calculator Uses', value: sessions,            icon: Calculator,    action: () => navigate('/calculator') },
         ].map(({ label, value, icon: Icon, action }) => (
           <button
             key={label}
@@ -62,7 +61,8 @@ export default function ClientOverview() {
               border: '1px solid var(--color-border)',
               borderRadius: 'var(--radius-lg)',
               padding: '1.25rem',
-              textAlign: 'left', cursor: 'pointer',
+              textAlign: 'left',
+              cursor: 'pointer',
               transition: 'box-shadow 150ms',
             }}
             onMouseEnter={e => e.currentTarget.style.boxShadow = 'var(--shadow-md)'}
@@ -70,14 +70,14 @@ export default function ClientOverview() {
           >
             <Icon size={18} style={{ color: 'var(--color-primary)', marginBottom: '0.6rem' }} />
             <div style={{ fontSize: 'var(--text-xl)', fontWeight: 800, color: 'var(--color-text)', fontVariantNumeric: 'tabular-nums' }}>
-              {loading ? '—' : value}
+              {loading ? '-' : value}
             </div>
             <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 2 }}>{label}</div>
           </button>
         ))}
       </div>
 
-      {/* Recent orders table */}
+      {/* Recent orders */}
       <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
         <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2 style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--color-text)' }}>Recent Orders</h2>
@@ -90,7 +90,7 @@ export default function ClientOverview() {
         </div>
 
         {loading ? (
-          <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>Loading…</div>
+          <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>Loading...</div>
         ) : orders.length === 0 ? (
           <div style={{ padding: '2.5rem', textAlign: 'center' }}>
             <ClipboardList size={32} style={{ color: 'var(--color-text-faint)', margin: '0 auto 0.75rem' }} />

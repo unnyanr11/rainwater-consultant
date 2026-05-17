@@ -34,25 +34,27 @@ export default function ClientProfile() {
     else { setSaved(true); setTimeout(() => setSaved(false), 2500) }
   }
 
-  const field = (label, key, type = 'text') => (
+  const inputStyle = {
+    padding: '0.6rem 0.75rem',
+    background: 'var(--color-surface-offset)',
+    border: '1px solid var(--color-border)',
+    borderRadius: 'var(--radius-md)',
+    fontSize: 'var(--text-sm)',
+    color: 'var(--color-text)',
+    outline: 'none',
+    width: '100%',
+  }
+
+  const Field = ({ label, name, type = 'text' }) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
       <label style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
         {label}
       </label>
       <input
         type={type}
-        value={form[key]}
-        onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-        style={{
-          padding: '0.6rem 0.75rem',
-          background: 'var(--color-surface-offset)',
-          border: '1px solid var(--color-border)',
-          borderRadius: 'var(--radius-md)',
-          fontSize: 'var(--text-sm)',
-          color: 'var(--color-text)',
-          outline: 'none',
-          width: '100%',
-        }}
+        value={form[name]}
+        onChange={e => setForm(f => ({ ...f, [name]: e.target.value }))}
+        style={inputStyle}
         onFocus={e => e.target.style.borderColor = 'var(--color-primary)'}
         onBlur={e => e.target.style.borderColor = 'var(--color-border)'}
       />
@@ -66,19 +68,17 @@ export default function ClientProfile() {
         <h1 style={{ fontSize: 'var(--text-xl)', fontWeight: 800, color: 'var(--color-text)' }}>My Profile</h1>
       </div>
 
-      {/* Email (read-only) */}
       <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', padding: '1rem 1.25rem', marginBottom: '1.25rem' }}>
         <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Email</div>
         <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text)' }}>{user?.email}</div>
       </div>
 
-      {/* Edit form */}
       <form onSubmit={handleSave}>
         <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {field('Full Name', 'full_name')}
-          {field('Phone', 'phone', 'tel')}
-          {field('City', 'city')}
-          {field('State', 'state')}
+          <Field label="Full Name" name="full_name" />
+          <Field label="Phone"     name="phone"     type="tel" />
+          <Field label="City"      name="city" />
+          <Field label="State"     name="state" />
         </div>
 
         {error && (
@@ -90,19 +90,23 @@ export default function ClientProfile() {
           disabled={saving}
           style={{
             marginTop: '1rem',
-            display: 'flex', alignItems: 'center', gap: '0.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
             padding: '0.65rem 1.25rem',
             background: saved ? 'var(--color-success)' : 'var(--color-primary)',
-            color: '#fff', border: 'none',
+            color: '#fff',
+            border: 'none',
             borderRadius: 'var(--radius-md)',
-            fontWeight: 700, fontSize: 'var(--text-sm)',
+            fontWeight: 700,
+            fontSize: 'var(--text-sm)',
             cursor: saving ? 'not-allowed' : 'pointer',
             opacity: saving ? 0.7 : 1,
             transition: 'background 300ms',
           }}
         >
           <Save size={15} />
-          {saving ? 'Saving…' : saved ? 'Saved!' : 'Save Changes'}
+          {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Changes'}
         </button>
       </form>
     </div>

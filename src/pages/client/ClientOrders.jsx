@@ -34,7 +34,7 @@ export default function ClientOrders() {
       </div>
 
       {loading ? (
-        <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>Loading…</p>
+        <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>Loading...</p>
       ) : orders.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '3rem', background: 'var(--color-surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)' }}>
           <ClipboardList size={36} style={{ color: 'var(--color-text-faint)', margin: '0 auto 1rem' }} />
@@ -66,11 +66,11 @@ export default function ClientOrders() {
                   <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--color-text)' }}>{o.city}, {o.state}</span>
                 </div>
                 <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
-                  {o.building_type?.replace(/_/g, ' ')} · {new Date(o.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  {o.building_type?.replace(/_/g, ' ')} &middot; {new Date(o.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </div>
                 {o.quoted_amount && (
                   <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-primary)', fontWeight: 700, marginTop: 4 }}>
-                    Quote: ₹{Number(o.quoted_amount).toLocaleString('en-IN')}
+                    Quote: Rs.{Number(o.quoted_amount).toLocaleString('en-IN')}
                   </div>
                 )}
               </div>
