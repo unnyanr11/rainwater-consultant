@@ -2,7 +2,6 @@ import PageLayout from '../../components/layout/PageLayout'
 import HeroSection         from '../../components/home/HeroSection'
 import StatsBar            from '../../components/home/StatsBar'
 import CalculatorCTA       from '../../components/home/CalculatorCTA'
-import TestimonialsSection from '../../components/home/TestimonialsSection'
 import BookLectureSection  from '../../components/home/BookLectureSection'
 import FinalCTA            from '../../components/home/FinalCTA'
 
@@ -29,7 +28,7 @@ export default function Home() {
         <HeroSection />
         <StatsBar />
         <CalculatorCTA />
-        <TestimonialsSection />
+        
         <BookLectureSection />
         <FinalCTA />
       </PageLayout>
