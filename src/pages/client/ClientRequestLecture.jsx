@@ -6,8 +6,8 @@ import {
   CheckCircle2, ArrowRight, ArrowLeft, Loader2,
   Mic, GraduationCap, Building2, Leaf, Droplets, Wrench
 } from 'lucide-react'
-import { supabase } from '../../../lib/supabase'
-import { useAuth } from '../../../context/AuthContext'
+import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../context/AuthContext'
 
 // ─── Blue palette ────────────────────────────────────────────────
 const BLUE_DARK   = '#074a7e'
