@@ -7,6 +7,8 @@ import {
   CheckCircle2, ArrowRight, ArrowLeft, Loader2,
   Layers, Home, Factory, TreePine, ShoppingBag, Star
 } from 'lucide-react'
+import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../context/AuthContext' 
 
 // ─── Blue palette (replaces all teal/green hardcodes) ────────────
 const BLUE_DARK   = '#074a7e'   // --color-primary-active
@@ -257,6 +259,7 @@ export default function ProfessionalDesign() {
   const navigate   = useNavigate()
   const location   = useLocation()
   const prefill    = location.state || {}
+  const { user }  = useAuth()
 
   const [step, setStep]     = useState(0)
   const [loading, setLoading] = useState(false)
@@ -297,12 +300,81 @@ export default function ProfessionalDesign() {
   const prev = () => setStep(s => Math.max(s - 1, 0))
 
   const submit = async () => {
-    if (!canProceed) return
-    setLoading(true)
-    await new Promise(r => setTimeout(r, 1600))
-    setLoading(false)
+  if (!canProceed) return
+  setLoading(true)
+
+  try {
+    // 1. Insert design order
+    const { data: order, error: orderErr } = await supabase
+      .from('design_orders')
+      .insert({
+        user_id:       user?.id ?? null,
+        city:          form.city.trim(),
+        state:         form.state.trim(),
+        pincode:       form.pincode.trim() || null,
+        address:       form.address.trim() || null,
+        soil_type:     form.soilType,
+        weather_zone:  form.weatherZone,
+        building_type: form.buildingType,
+        roof_area_sqm: form.roofArea ? Number(form.roofArea) : null,
+        storeys:       form.storeys   ? Number(form.storeys)   : null,
+        occupants:     form.occupants ? Number(form.occupants) : null,
+        daily_usage_lpd: form.usage   ? Number(form.usage)     : null,
+        visit_preferred: form.visitPreferred,
+        visit_date:    form.visitPreferred && form.visitDate ? form.visitDate : null,
+        visit_note:    form.visitNote.trim() || null,
+        contact_name:  form.name.trim(),
+        contact_email: form.email.trim(),
+        contact_phone: form.phone.trim(),
+        message:       form.message.trim() || null,
+        status:        'pending',
+      })
+      .select('id')
+      .single()
+
+    if (orderErr) throw orderErr
+
+    // 2. Upload blueprint files (if any)
+    if (files.length > 0) {
+      for (const file of files) {
+        const ext      = file.name.split('.').pop()
+        const safeName = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
+        const path     = `${order.id}/${safeName}`
+
+        const { error: uploadErr } = await supabase.storage
+          .from('order-files')
+          .upload(path, file, { contentType: file.type, upsert: false })
+
+        if (uploadErr) throw uploadErr
+
+        // 3. Insert file record
+        const { error: fileErr } = await supabase
+          .from('order_files')
+          .insert({
+            order_id:        order.id,
+            uploaded_by:     user?.id ?? null,
+            file_name:       file.name,
+            file_size_bytes: file.size,
+            mime_type:       file.type,
+            storage_path:    path,
+            bucket:          'order-files',
+            is_drawing:      false,
+            is_unlocked:     false,
+          })
+
+        if (fileErr) throw fileErr
+      }
+    }
+
     setDone(true)
+
+  } catch (err) {
+    console.error('Submission failed:', err)
+    alert('Something went wrong: ' + (err.message || 'Please try again.'))
+  } finally {
+    setLoading(false)
   }
+}
 
   const Field = ({ label, children, hint }) => (
     <div style={{ marginBottom: '1.1rem' }}>
