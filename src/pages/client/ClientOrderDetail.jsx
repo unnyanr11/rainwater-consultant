@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import {
   ArrowLeft, FileText, Download, Calendar,
-  CheckCircle2, XCircle, RefreshCw, CreditCard, Clock, AlertCircle
+  CheckCircle2, RefreshCw, CreditCard, Clock, AlertCircle
 } from 'lucide-react'
 
 const STATUS_LABEL = {

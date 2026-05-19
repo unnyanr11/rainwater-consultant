@@ -4,9 +4,9 @@ import { supabase } from '../../lib/supabase'
 import AdminSidebar from '../../components/admin/AdminSidebar'
 import PageTransition from '../../components/motion/PageTransition'
 import {
-  ArrowLeft, MapPin, Building2, Layers, FileText,
-  Download, Calendar, Clock, CheckCircle2, XCircle,
-  MessageSquare, User, Phone, Mail, RefreshCw, CreditCard
+  ArrowLeft, MapPin, Layers, FileText,
+  Download, Calendar, CheckCircle2,
+  MessageSquare, User, RefreshCw, CreditCard
 } from 'lucide-react'
 
 const STATUS_LABEL = {
