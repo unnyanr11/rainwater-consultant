@@ -21,6 +21,7 @@ import ClientProfile       from './pages/client/ClientProfile'
 import ClientRequestLecture from './pages/client/ClientRequestLecture'
 import ClientSupport       from './pages/client/ClientSupport'
 import AdminDashboard      from './pages/admin/Dashboard'
+import AdminLeads          from './pages/admin/Leads'
 import AdminVisits         from './pages/admin/SiteVisits'
 import AdminLeadDetail     from './pages/admin/AdminLeadDetail'
 import AdminPayments       from './pages/admin/Payments'
@@ -59,6 +60,8 @@ export default function App() {
 
             {/* Protected — admin */}
             <Route path="/admin"                element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/admin/leads"          element={<ProtectedRoute role="admin"><AdminLeads /></ProtectedRoute>} />
+            <Route path="/admin/leads/:id"      element={<ProtectedRoute role="admin"><AdminLeadDetail /></ProtectedRoute>} />
             <Route path="/admin/visits"         element={<ProtectedRoute role="admin"><AdminVisits /></ProtectedRoute>} />
             <Route path="/admin/visits/:id"     element={<ProtectedRoute role="admin"><AdminLeadDetail /></ProtectedRoute>} />
             <Route path="/admin/payments"       element={<ProtectedRoute role="admin"><AdminPayments /></ProtectedRoute>} />
