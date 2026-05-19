@@ -66,6 +66,71 @@ function StatusBadge({ status }) {
   )
 }
 
+// Formats a date string (date-only or datetime) to "12 Jun" style
+function fmtDate(dateStr) {
+  if (!dateStr) return null
+  const d = new Date(dateStr)
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+}
+
+// Formats a time string "HH:MM:SS" → "10:30 AM"
+function fmtTime(timeStr) {
+  if (!timeStr) return null
+  const [h, m] = timeStr.split(':')
+  const hour = parseInt(h, 10)
+  const ampm = hour >= 12 ? 'PM' : 'AM'
+  const hour12 = hour % 12 || 12
+  return `${hour12}:${m} ${ampm}`
+}
+
+function VisitCell({ lead }) {
+  // Priority: confirmed date set by admin > client preferred date
+  if (lead.confirmed_visit_date) {
+    return (
+      <div>
+        <span style={{
+          fontSize: 'var(--text-xs)', fontWeight: 700,
+          color: '#2980b9',
+          background: 'rgba(41,128,185,0.10)',
+          padding: '0.2rem 0.6rem',
+          borderRadius: 99,
+          display: 'inline-block',
+        }}>Confirmed</span>
+        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text)', fontWeight: 600, marginTop: 3 }}>
+          {fmtDate(lead.confirmed_visit_date)}
+          {lead.confirmed_visit_time && (
+            <span style={{ color: 'var(--color-text-muted)', fontWeight: 400 }}>
+              {' · '}{fmtTime(lead.confirmed_visit_time)}
+            </span>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  if (lead.visit_preferred) {
+    return (
+      <div>
+        <span style={{
+          fontSize: 'var(--text-xs)', fontWeight: 700,
+          color: 'var(--color-success)',
+          background: 'rgba(67,122,34,0.1)',
+          padding: '0.2rem 0.6rem',
+          borderRadius: 99,
+          display: 'inline-block',
+        }}>Requested</span>
+        {lead.visit_date && (
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 3 }}>
+            {fmtDate(lead.visit_date)}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  return <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)' }}>—</span>
+}
+
 export default function Leads() {
   const navigate = useNavigate()
   const [leads, setLeads]     = useState([])
@@ -131,7 +196,6 @@ export default function Leads() {
 
           {/* Filters */}
           <div style={{ display: 'flex', gap: '0.65rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
-            {/* Search */}
             <div style={{ position: 'relative', flex: '1 1 220px', minWidth: 0 }}>
               <Search size={14} style={{
                 position: 'absolute', left: '0.75rem', top: '50%',
@@ -156,7 +220,6 @@ export default function Leads() {
               />
             </div>
 
-            {/* Status filter */}
             <div style={{ position: 'relative' }}>
               <Filter size={13} style={{
                 position: 'absolute', left: '0.7rem', top: '50%',
@@ -239,7 +302,7 @@ export default function Leads() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: '2px solid var(--color-border)' }}>
-                    {['Contact', 'Location', 'Building', 'Roof Area', 'Visit', 'Status', 'Submitted', ''].map(h => (
+                    {['Contact', 'Location', 'Building', 'Roof Area', 'Visit Date', 'Status', 'Submitted', ''].map(h => (
                       <th key={h} style={{
                         padding: '0.5rem 0.85rem',
                         textAlign: 'left',
@@ -254,7 +317,7 @@ export default function Leads() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((lead, i) => (
+                  {filtered.map((lead) => (
                     <tr
                       key={lead.id}
                       onClick={() => navigate(`/admin/leads/${lead.id}`)}
@@ -297,23 +360,8 @@ export default function Leads() {
                           {lead.roof_area_sqm ? `${Number(lead.roof_area_sqm).toLocaleString('en-IN')} m²` : '—'}
                         </span>
                       </td>
-                      <td style={{ padding: '0.75rem 0.85rem' }}>
-                        {lead.visit_preferred ? (
-                          <span style={{
-                            fontSize: 'var(--text-xs)', fontWeight: 700,
-                            color: 'var(--color-success)',
-                            background: 'rgba(67,122,34,0.1)',
-                            padding: '0.2rem 0.6rem',
-                            borderRadius: 99,
-                          }}>Requested</span>
-                        ) : (
-                          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)' }}>—</span>
-                        )}
-                        {lead.visit_date && (
-                          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 3 }}>
-                            {new Date(lead.visit_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                          </div>
-                        )}
+                      <td style={{ padding: '0.75rem 0.85rem', minWidth: 110 }}>
+                        <VisitCell lead={lead} />
                       </td>
                       <td style={{ padding: '0.75rem 0.85rem' }}>
                         <StatusBadge status={lead.status} />
