@@ -1,19 +1,18 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import Navbar from '../../components/home/Navbar'
 import {
   MapPin, Building2, FileUp, Calendar,
   CheckCircle2, ArrowRight, ArrowLeft, Loader2,
-  Layers, Home, Factory, TreePine, ShoppingBag, Star
+  Layers, Home, Factory, TreePine, ShoppingBag, Star, Search
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext' 
 
 // ─── Blue palette (replaces all teal/green hardcodes) ────────────
-const BLUE_DARK   = '#074a7e'   // --color-primary-active
-const BLUE_MID    = '#0b6fb8'   // --color-primary
- // light accent
+const BLUE_DARK   = '#074a7e'
+const BLUE_MID    = '#0b6fb8'
 const BLUE_BG     = 'rgba(11,111,184,0.07)'
 const BLUE_BORDER = 'rgba(11,111,184,0.20)'
 
@@ -71,6 +70,18 @@ const labelStyle = {
   textTransform: 'uppercase',
   letterSpacing: '0.1em',
   marginBottom: '0.4rem',
+}
+
+// ─── Field — defined OUTSIDE the page component so it is stable ──
+// (defining it inside causes re-mount on every keystroke → focus loss)
+function Field({ label, children, hint }) {
+  return (
+    <div style={{ marginBottom: '1.1rem' }}>
+      <label style={labelStyle}>{label}</label>
+      {children}
+      {hint && <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)', marginTop: 4 }}>{hint}</p>}
+    </div>
+  )
 }
 
 // ─── selector card ─────────────────────────────────────────────
@@ -266,6 +277,11 @@ export default function ProfessionalDesign() {
   const [done, setDone]     = useState(false)
   const [files, setFiles]   = useState([])
 
+  // Pincode lookup state
+  const [pincodeLoading, setPincodeLoading] = useState(false)
+  const [pincodeError, setPincodeError]     = useState('')
+  const [pincodeFilled, setPincodeFilled]   = useState(false)
+
   const [form, setForm] = useState({
     city:    prefill.city    || '',
     state:   prefill.state   || '',
@@ -287,7 +303,49 @@ export default function ProfessionalDesign() {
     message: '',
   })
 
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  const set = useCallback((k, v) => setForm(f => ({ ...f, [k]: v })), [])
+
+  // ─── Pincode lookup via India Post API ────────────────────────
+  const lookupPincode = useCallback(async (pin) => {
+    if (!pin || pin.length !== 6 || !/^\d{6}$/.test(pin)) {
+      setPincodeError('')
+      setPincodeFilled(false)
+      return
+    }
+    setPincodeLoading(true)
+    setPincodeError('')
+    setPincodeFilled(false)
+    try {
+      const res  = await fetch(`https://api.postalpincode.in/pincode/${pin}`)
+      const data = await res.json()
+      if (data?.[0]?.Status === 'Success' && data[0].PostOffice?.length > 0) {
+        const po    = data[0].PostOffice[0]
+        const city  = po.District || po.Division || po.Name || ''
+        const state = po.State || ''
+        setForm(f => ({
+          ...f,
+          city:  f.city.trim()  === '' ? city  : f.city,
+          state: f.state.trim() === '' ? state : f.state,
+        }))
+        setPincodeFilled(true)
+        setPincodeError('')
+      } else {
+        setPincodeError('No location found for this PIN code')
+      }
+    } catch {
+      setPincodeError('Could not fetch location — check your connection')
+    } finally {
+      setPincodeLoading(false)
+    }
+  }, [])
+
+  const handlePincodeChange = useCallback((e) => {
+    const val = e.target.value.replace(/\D/g, '').slice(0, 6)
+    set('pincode', val)
+    setPincodeFilled(false)
+    setPincodeError('')
+    if (val.length === 6) lookupPincode(val)
+  }, [set, lookupPincode])
 
   const canProceed = [
     form.city.trim() && form.state.trim(),
@@ -300,89 +358,78 @@ export default function ProfessionalDesign() {
   const prev = () => setStep(s => Math.max(s - 1, 0))
 
   const submit = async () => {
-  if (!canProceed) return
-  setLoading(true)
+    if (!canProceed) return
+    setLoading(true)
 
-  try {
-    // 1. Insert design order
-    const { data: order, error: orderErr } = await supabase
-      .from('design_orders')
-      .insert({
-        user_id:       user?.id ?? null,
-        city:          form.city.trim(),
-        state:         form.state.trim(),
-        pincode:       form.pincode.trim() || null,
-        address:       form.address.trim() || null,
-        soil_type:     form.soilType,
-        weather_zone:  form.weatherZone,
-        building_type: form.buildingType,
-        roof_area_sqm: form.roofArea ? Number(form.roofArea) : null,
-        storeys:       form.storeys   ? Number(form.storeys)   : null,
-        occupants:     form.occupants ? Number(form.occupants) : null,
-        daily_usage_lpd: form.usage   ? Number(form.usage)     : null,
-        visit_preferred: form.visitPreferred,
-        visit_date:    form.visitPreferred && form.visitDate ? form.visitDate : null,
-        visit_note:    form.visitNote.trim() || null,
-        contact_name:  form.name.trim(),
-        contact_email: form.email.trim(),
-        contact_phone: form.phone.trim(),
-        message:       form.message.trim() || null,
-        status:        'pending',
-      })
-      .select('id')
-      .single()
+    try {
+      const { data: order, error: orderErr } = await supabase
+        .from('design_orders')
+        .insert({
+          user_id:       user?.id ?? null,
+          city:          form.city.trim(),
+          state:         form.state.trim(),
+          pincode:       form.pincode.trim() || null,
+          address:       form.address.trim() || null,
+          soil_type:     form.soilType,
+          weather_zone:  form.weatherZone,
+          building_type: form.buildingType,
+          roof_area_sqm: form.roofArea ? Number(form.roofArea) : null,
+          storeys:       form.storeys   ? Number(form.storeys)   : null,
+          occupants:     form.occupants ? Number(form.occupants) : null,
+          daily_usage_lpd: form.usage   ? Number(form.usage)     : null,
+          visit_preferred: form.visitPreferred,
+          visit_date:    form.visitPreferred && form.visitDate ? form.visitDate : null,
+          visit_note:    form.visitNote.trim() || null,
+          contact_name:  form.name.trim(),
+          contact_email: form.email.trim(),
+          contact_phone: form.phone.trim(),
+          message:       form.message.trim() || null,
+          status:        'pending',
+        })
+        .select('id')
+        .single()
 
-    if (orderErr) throw orderErr
+      if (orderErr) throw orderErr
 
-    // 2. Upload blueprint files (if any)
-    if (files.length > 0) {
-      for (const file of files) {
-        const ext      = file.name.split('.').pop()
-        const safeName = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
-        const path     = `${order.id}/${safeName}`
+      if (files.length > 0) {
+        for (const file of files) {
+          const ext      = file.name.split('.').pop()
+          const safeName = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
+          const path     = `${order.id}/${safeName}`
 
-        const { error: uploadErr } = await supabase.storage
-          .from('order-files')
-          .upload(path, file, { contentType: file.type, upsert: false })
+          const { error: uploadErr } = await supabase.storage
+            .from('order-files')
+            .upload(path, file, { contentType: file.type, upsert: false })
 
-        if (uploadErr) throw uploadErr
+          if (uploadErr) throw uploadErr
 
-        // 3. Insert file record
-        const { error: fileErr } = await supabase
-          .from('order_files')
-          .insert({
-            order_id:        order.id,
-            uploaded_by:     user?.id ?? null,
-            file_name:       file.name,
-            file_size_bytes: file.size,
-            mime_type:       file.type,
-            storage_path:    path,
-            bucket:          'order-files',
-            is_drawing:      false,
-            is_unlocked:     false,
-          })
+          const { error: fileErr } = await supabase
+            .from('order_files')
+            .insert({
+              order_id:        order.id,
+              uploaded_by:     user?.id ?? null,
+              file_name:       file.name,
+              file_size_bytes: file.size,
+              mime_type:       file.type,
+              storage_path:    path,
+              bucket:          'order-files',
+              is_drawing:      false,
+              is_unlocked:     false,
+            })
 
-        if (fileErr) throw fileErr
+          if (fileErr) throw fileErr
+        }
       }
+
+      setDone(true)
+
+    } catch (err) {
+      console.error('Submission failed:', err)
+      alert('Something went wrong: ' + (err.message || 'Please try again.'))
+    } finally {
+      setLoading(false)
     }
-
-    setDone(true)
-
-  } catch (err) {
-    console.error('Submission failed:', err)
-    alert('Something went wrong: ' + (err.message || 'Please try again.'))
-  } finally {
-    setLoading(false)
   }
-}
-
-  const Field = ({ label, children, hint }) => (
-    <div style={{ marginBottom: '1.1rem' }}>
-      <label style={labelStyle}>{label}</label>
-      {children}
-      {hint && <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)', marginTop: 4 }}>{hint}</p>}
-    </div>
-  )
 
   if (done) return (
     <>
@@ -438,6 +485,8 @@ export default function ProfessionalDesign() {
         .pd-next:hover:not(:disabled) { background: var(--color-primary-hover) !important; }
         .pd-next:disabled { opacity: 0.45; cursor: not-allowed; }
         .pd-prev:hover { background: var(--color-surface-offset) !important; }
+        .pd-pincode-wrap { position: relative; }
+        .pd-pincode-wrap .pd-pin-icon { position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); pointer-events: none; }
         @media (max-width: 600px) {
           .pd-grid2 { grid-template-columns: 1fr !important; }
         }
@@ -531,6 +580,43 @@ export default function ProfessionalDesign() {
                       </div>
                     </div>
 
+                    {/* PIN code first — auto-fills city & state */}
+                    <Field label="PIN Code" hint="Enter your 6-digit PIN code to auto-fill city and state">
+                      <div className="pd-pincode-wrap">
+                        <input
+                          className="pd-input"
+                          style={{
+                            ...inputStyle,
+                            paddingRight: '2.5rem',
+                            borderColor: pincodeFilled
+                              ? 'var(--color-success)'
+                              : pincodeError
+                              ? 'var(--color-error)'
+                              : undefined,
+                          }}
+                          placeholder="e.g. 411001"
+                          value={form.pincode}
+                          onChange={handlePincodeChange}
+                          maxLength={6}
+                          inputMode="numeric"
+                        />
+                        <span className="pd-pin-icon">
+                          {pincodeLoading
+                            ? <Loader2 size={15} style={{ color: 'var(--color-text-faint)', animation: 'spin 0.9s linear infinite' }} />
+                            : pincodeFilled
+                            ? <CheckCircle2 size={15} style={{ color: 'var(--color-success)' }} />
+                            : <Search size={15} style={{ color: 'var(--color-text-faint)' }} />
+                          }
+                        </span>
+                      </div>
+                      {pincodeError && (
+                        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-error)', marginTop: 4 }}>{pincodeError}</p>
+                      )}
+                      {pincodeFilled && (
+                        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-success)', marginTop: 4 }}>✓ City and state filled from PIN code</p>
+                      )}
+                    </Field>
+
                     <div className="pd-grid2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 1rem' }}>
                       <Field label="City / Town *">
                         <input className="pd-input" style={inputStyle} placeholder="e.g. Pune" value={form.city} onChange={e => set('city', e.target.value)} />
@@ -540,14 +626,9 @@ export default function ProfessionalDesign() {
                       </Field>
                     </div>
 
-                    <div className="pd-grid2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 1rem' }}>
-                      <Field label="PIN Code">
-                        <input className="pd-input" style={inputStyle} placeholder="411001" value={form.pincode} onChange={e => set('pincode', e.target.value)} />
-                      </Field>
-                      <Field label="Approximate Area (sq.m)">
-                        <input className="pd-input" style={inputStyle} type="number" min={0} placeholder="e.g. 150" value={form.roofArea} onChange={e => set('roofArea', e.target.value)} />
-                      </Field>
-                    </div>
+                    <Field label="Approximate Roof Area (sq.m)">
+                      <input className="pd-input" style={inputStyle} type="number" min={0} placeholder="e.g. 150" value={form.roofArea} onChange={e => set('roofArea', e.target.value)} />
+                    </Field>
 
                     <Field label="Full Address (optional)">
                       <textarea className="pd-input" style={{ ...inputStyle, resize: 'vertical', minHeight: 72 }}
@@ -732,7 +813,7 @@ export default function ProfessionalDesign() {
                       <p style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.6rem' }}>Order Summary</p>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                         {[
-                          ['📍 Location', `${form.city}${form.state ? ', ' + form.state : ''}`],
+                          ['📍 Location', `${form.city}${form.state ? ', ' + form.state : ''}${form.pincode ? ' – ' + form.pincode : ''}`],
                           ['🏗️ Building', BUILDING_TYPES.find(b => b.id === form.buildingType)?.label || '—'],
                           ['🌱 Soil', SOIL_TYPES.find(s => s.id === form.soilType)?.label || '—'],
                           ['🌧️ Climate', WEATHER_ZONES.find(w => w.id === form.weatherZone)?.label || '—'],
