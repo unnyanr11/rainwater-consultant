@@ -1,5 +1,7 @@
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useRef } from 'react'
+import { useAuth } from '../../context/AuthContext'
+import ThemeToggle from '../ui/ThemeToggle'
 
 const NAV = [
   {
@@ -12,6 +14,19 @@ const NAV = [
         <rect x="14" y="3" width="7" height="7" rx="1"/>
         <rect x="3" y="14" width="7" height="7" rx="1"/>
         <rect x="14" y="14" width="7" height="7" rx="1"/>
+      </svg>
+    )
+  },
+  {
+    label: 'All Leads',
+    to: '/admin/leads',
+    badge: null,
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <line x1="23" y1="11" x2="17" y2="11"/>
+        <line x1="20" y1="8" x2="20" y2="14"/>
       </svg>
     )
   },
@@ -79,6 +94,8 @@ const NAV = [
 
 export default function AdminSidebar() {
   const location = useLocation()
+  const navigate = useNavigate()
+  const { signOut, profile } = useAuth()
   const indicatorRef = useRef(null)
   const navRef = useRef(null)
 
@@ -93,19 +110,27 @@ export default function AdminSidebar() {
     }
   }, [location.pathname])
 
+  const handleSignOut = async () => {
+    await signOut()
+    navigate('/login')
+  }
+
   return (
     <aside className="admin-sidebar">
-      <div className="admin-brand">
-        <div className="admin-brand-mark">
-          <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
-            <path d="M16 3 C16 3 6 14 6 20 a10 10 0 0 0 20 0 C26 14 16 3 16 3Z" fill="white" opacity="0.9"/>
-            <path d="M16 12 C16 12 11 18 11 22 a5 5 0 0 0 10 0 C21 18 16 12 16 12Z" fill="white" opacity="0.4"/>
-          </svg>
+      <div className="admin-brand" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+          <div className="admin-brand-mark">
+            <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
+              <path d="M16 3 C16 3 6 14 6 20 a10 10 0 0 0 20 0 C26 14 16 3 16 3Z" fill="white" opacity="0.9"/>
+              <path d="M16 12 C16 12 11 18 11 22 a5 5 0 0 0 10 0 C21 18 16 12 16 12Z" fill="white" opacity="0.4"/>
+            </svg>
+          </div>
+          <div className="admin-brand-text">
+            <small>Ops Console</small>
+            <h1>Field-first<br />Admin</h1>
+          </div>
         </div>
-        <div className="admin-brand-text">
-          <small>Ops Console</small>
-          <h1>Field-first<br />Admin</h1>
-        </div>
+        <ThemeToggle size="sm" />
       </div>
 
       <nav className="admin-nav" ref={navRef}>
@@ -131,6 +156,15 @@ export default function AdminSidebar() {
           <p>Lead → visit → drawing → payment → execution. Each section mirrors a real field handoff.</p>
         </div>
       </div>
+
+      <button className="admin-signout-btn" onClick={handleSignOut} aria-label="Sign out">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        <span>Sign Out{profile?.full_name ? ` (${profile.full_name.split(' ')[0]})` : ''}</span>
+      </button>
     </aside>
   )
 }
