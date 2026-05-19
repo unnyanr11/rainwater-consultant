@@ -2,9 +2,51 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
-import { ClipboardList, ArrowRight, MapPin, BadgeCheck } from 'lucide-react'
+import { ClipboardList, ArrowRight, MapPin, Calendar } from 'lucide-react'
 
-// reuse BadgeCheck from above (move to a shared component or copy it here)
+const STATUS_COLOR = {
+  pending:             { bg: '#fef3c7', text: '#92400e' },
+  visit_negotiating:   { bg: '#ede9fe', text: '#5b21b6' },
+  visit_confirmed:     { bg: '#dbeafe', text: '#1e40af' },
+  visit_payment_due:   { bg: '#fee2e2', text: '#991b1b' },
+  visit_paid:          { bg: '#d1fae5', text: '#065f46' },
+  visit_scheduled:     { bg: '#dbeafe', text: '#1e40af' },
+  visit_complete:      { bg: '#d1fae5', text: '#065f46' },
+  measurement_done:    { bg: '#d1fae5', text: '#065f46' },
+  drawing_in_progress: { bg: '#dbeafe', text: '#1e40af' },
+  drawing_review:      { bg: '#ede9fe', text: '#5b21b6' },
+  drawing_ready:       { bg: '#d1fae5', text: '#065f46' },
+  completed:           { bg: '#d1fae5', text: '#065f46' },
+}
+
+function OrderStatusBadge({ status }) {
+  const c = STATUS_COLOR[status] || { bg: 'var(--color-surface-offset)', text: 'var(--color-text-muted)' }
+  return (
+    <span style={{
+      fontSize: 'var(--text-xs)', fontWeight: 700,
+      padding: '3px 10px', borderRadius: 'var(--radius-full)',
+      background: c.bg, color: c.text,
+      whiteSpace: 'nowrap',
+    }}>
+      {status?.replace(/_/g, ' ')}
+    </span>
+  )
+}
+
+function fmtDate(dateStr) {
+  if (!dateStr) return null
+  if (dateStr.includes('T')) return new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+  const [y, m, d] = dateStr.split('-').map(Number)
+  return new Date(y, m - 1, d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function fmtTime(timeStr) {
+  if (!timeStr) return null
+  const [h, m] = timeStr.split(':')
+  const hour = parseInt(h, 10)
+  const ampm = hour >= 12 ? 'PM' : 'AM'
+  return `${hour % 12 || 12}:${m} ${ampm}`
+}
 
 export default function ClientOrders() {
   const { user } = useAuth()
@@ -16,7 +58,7 @@ export default function ClientOrders() {
     if (!user) return
     supabase
       .from('design_orders')
-      .select('id, status, city, state, building_type, created_at, quoted_amount')
+      .select('id, status, city, state, building_type, created_at, quoted_amount, confirmed_visit_date, confirmed_visit_time, visit_preferred, visit_date')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .then(({ data }) => { setOrders(data || []); setLoading(false) })
@@ -42,13 +84,13 @@ export default function ClientOrders() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           {orders.map(o => (
             <div key={o.id} onClick={() => navigate(`/client/orders/${o.id}`)}
-              style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', padding: '1rem 1.25rem', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'box-shadow 150ms' }}
+              style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', padding: '1rem 1.25rem', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', transition: 'box-shadow 150ms' }}
               onMouseEnter={e => e.currentTarget.style.boxShadow = 'var(--shadow-md)'}
               onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
             >
-              <div>
+              <div style={{ minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: 4 }}>
-                  <MapPin size={13} style={{ color: 'var(--color-text-faint)' }} />
+                  <MapPin size={13} style={{ color: 'var(--color-text-faint)', flexShrink: 0 }} />
                   <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--color-text)' }}>{o.city}, {o.state}</span>
                 </div>
                 <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
@@ -59,9 +101,27 @@ export default function ClientOrders() {
                     Quote: ₹{Number(o.quoted_amount).toLocaleString('en-IN')}
                   </div>
                 )}
+                {/* Confirmed visit date — shown with priority over preferred date */}
+                {o.confirmed_visit_date ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 5 }}>
+                    <Calendar size={11} style={{ color: '#2980b9', flexShrink: 0 }} />
+                    <span style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: '#2980b9' }}>
+                      Visit: {fmtDate(o.confirmed_visit_date)}
+                      {o.confirmed_visit_time && ` · ${fmtTime(o.confirmed_visit_time)}`}
+                    </span>
+                    <span style={{ fontSize: 'var(--text-xs)', background: 'rgba(41,128,185,0.10)', color: '#2980b9', padding: '1px 6px', borderRadius: 99, fontWeight: 700 }}>Confirmed</span>
+                  </div>
+                ) : o.visit_preferred && o.visit_date ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 5 }}>
+                    <Calendar size={11} style={{ color: 'var(--color-text-faint)', flexShrink: 0 }} />
+                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
+                      Preferred: {fmtDate(o.visit_date)}
+                    </span>
+                  </div>
+                ) : null}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <BadgeCheck status={o.status} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
+                <OrderStatusBadge status={o.status} />
                 <ArrowRight size={14} style={{ color: 'var(--color-text-faint)' }} />
               </div>
             </div>
