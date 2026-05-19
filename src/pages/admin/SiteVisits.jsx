@@ -7,29 +7,42 @@ import AdminStatRow from '../../components/admin/AdminStatRow'
 import AdminEmptyState from '../../components/admin/AdminEmptyState'
 import PageTransition from '../../components/motion/PageTransition'
 
+// All values match the order_status enum in the DB
 const STATUS_LABELS = {
-  pending:             'New Lead',
-  visit_negotiating:   'Negotiating',
-  visit_confirmed:     'Confirmed',
-  visit_payment_due:   'Awaiting Payment',
-  visit_paid:          'Visit Paid',
-  visit_scheduled:     'Scheduled',
-  visit_complete:      'Completed',
-  measurement_done:    'Measured',
+  pending:                    'New Lead',
+  visit_negotiating:          'Negotiating',
+  visit_payment_due:          'Awaiting Payment',
+  visit_paid:                 'Visit Paid',
+  visit_scheduled:            'Scheduled',
+  visit_scheduled_confirmed:  'Confirmed',
+  visit_complete:             'Completed',
+  measurement_done:           'Measured',
 }
 
 const STATUS_COLORS = {
-  pending:             'lead',
-  visit_negotiating:   'partial',
-  visit_confirmed:     'visit',
-  visit_payment_due:   'overdue',
-  visit_paid:          'paid',
-  visit_scheduled:     'visit',
-  visit_complete:      'paid',
-  measurement_done:    'design',
+  pending:                    'lead',
+  visit_negotiating:          'partial',
+  visit_payment_due:          'overdue',
+  visit_paid:                 'paid',
+  visit_scheduled:            'visit',
+  visit_scheduled_confirmed:  'visit',
+  visit_complete:             'paid',
+  measurement_done:           'design',
 }
 
-const FILTER_STATUSES = ['all', 'pending', 'visit_negotiating', 'visit_payment_due', 'visit_scheduled', 'visit_complete', 'measurement_done']
+// All statuses pulled from DB + displayed as filter tabs
+const VISIT_STATUSES = [
+  'pending',
+  'visit_negotiating',
+  'visit_payment_due',
+  'visit_paid',
+  'visit_scheduled',
+  'visit_scheduled_confirmed',
+  'visit_complete',
+  'measurement_done',
+]
+
+const FILTER_STATUSES = ['all', ...VISIT_STATUSES]
 
 export default function AdminVisits() {
   const [visits, setVisits]   = useState([])
@@ -42,7 +55,7 @@ export default function AdminVisits() {
       const { data } = await supabase
         .from('design_orders')
         .select('id, contact_name, contact_phone, building_type, city, state, status, visit_note, visit_date, confirmed_visit_date, confirmed_visit_time, visit_payment_status, created_at')
-        .in('status', ['pending', 'visit_negotiating', 'visit_confirmed', 'visit_payment_due', 'visit_paid', 'visit_scheduled', 'visit_complete', 'measurement_done'])
+        .in('status', VISIT_STATUSES)
         .order('created_at', { ascending: false })
       setVisits(data || [])
       setLoading(false)
@@ -50,9 +63,9 @@ export default function AdminVisits() {
     load()
   }, [])
 
-  const scheduled  = visits.filter(v => v.status === 'visit_scheduled').length
-  const completed  = visits.filter(v => v.status === 'visit_complete' || v.status === 'measurement_done').length
-  const pending    = visits.filter(v => v.status === 'pending').length
+  const scheduled   = visits.filter(v => v.status === 'visit_scheduled' || v.status === 'visit_scheduled_confirmed').length
+  const completed   = visits.filter(v => v.status === 'visit_complete' || v.status === 'measurement_done').length
+  const pending     = visits.filter(v => v.status === 'pending').length
   const negotiating = visits.filter(v => v.status === 'visit_negotiating' || v.status === 'visit_payment_due').length
 
   const filtered = filter === 'all' ? visits : visits.filter(v => v.status === filter)
@@ -146,7 +159,7 @@ export default function AdminVisits() {
                       <td><span>{v.building_type?.replace(/_/g, ' ') || '—'}</span></td>
                       <td><span>{v.city || '—'}{v.state ? `, ${v.state}` : ''}</span></td>
                       <td>
-                        <span className={`admin-status ${STATUS_COLORS[v.status] || 'pending'}`}>
+                        <span className={`admin-status ${STATUS_COLORS[v.status] || 'lead'}`}>
                           {STATUS_LABELS[v.status] || v.status}
                         </span>
                       </td>
