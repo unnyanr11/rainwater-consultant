@@ -22,6 +22,7 @@ import ClientRequestLecture from './pages/client/ClientRequestLecture'
 import ClientSupport       from './pages/client/ClientSupport'
 import AdminDashboard      from './pages/admin/Dashboard'
 import AdminVisits         from './pages/admin/SiteVisits'
+import AdminLeadDetail     from './pages/admin/AdminLeadDetail'
 import AdminPayments       from './pages/admin/Payments'
 import AdminDesigns        from './pages/admin/DesignQueue'
 import AdminCustomers      from './pages/admin/Customers'
@@ -57,12 +58,13 @@ export default function App() {
             </Route>
 
             {/* Protected — admin */}
-            <Route path="/admin"           element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
-            <Route path="/admin/visits"    element={<ProtectedRoute role="admin"><AdminVisits /></ProtectedRoute>} />
-            <Route path="/admin/payments"  element={<ProtectedRoute role="admin"><AdminPayments /></ProtectedRoute>} />
-            <Route path="/admin/designs"   element={<ProtectedRoute role="admin"><AdminDesigns /></ProtectedRoute>} />
-            <Route path="/admin/customers" element={<ProtectedRoute role="admin"><AdminCustomers /></ProtectedRoute>} />
-            <Route path="/admin/reports"   element={<ProtectedRoute role="admin"><AdminReports /></ProtectedRoute>} />
+            <Route path="/admin"                element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/admin/visits"         element={<ProtectedRoute role="admin"><AdminVisits /></ProtectedRoute>} />
+            <Route path="/admin/visits/:id"     element={<ProtectedRoute role="admin"><AdminLeadDetail /></ProtectedRoute>} />
+            <Route path="/admin/payments"       element={<ProtectedRoute role="admin"><AdminPayments /></ProtectedRoute>} />
+            <Route path="/admin/designs"        element={<ProtectedRoute role="admin"><AdminDesigns /></ProtectedRoute>} />
+            <Route path="/admin/customers"      element={<ProtectedRoute role="admin"><AdminCustomers /></ProtectedRoute>} />
+            <Route path="/admin/reports"        element={<ProtectedRoute role="admin"><AdminReports /></ProtectedRoute>} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>
