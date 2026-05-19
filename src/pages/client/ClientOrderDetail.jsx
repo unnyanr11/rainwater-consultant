@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { useRazorpay } from '../../hooks/useRazorpay'
 import {
   ArrowLeft, FileText, Download, Calendar,
   CheckCircle2, RefreshCw, CreditCard, Clock, AlertCircle
@@ -87,6 +88,7 @@ function Card({ children, style }) {
 export default function ClientOrderDetail() {
   const { id }     = useParams()
   const navigate   = useNavigate()
+  const { ready: rzpReady } = useRazorpay()
 
   const [order, setOrder]       = useState(null)
   const [files, setFiles]       = useState([])
@@ -95,6 +97,7 @@ export default function ClientOrderDetail() {
   const [payment, setPayment]   = useState(null)
   const [loading, setLoading]   = useState(true)
   const [saving, setSaving]     = useState(false)
+  const [payError, setPayError] = useState('')
 
   // counter-offer form
   const [offerDate, setOfferDate] = useState('')
@@ -102,9 +105,8 @@ export default function ClientOrderDetail() {
   const [offerNote, setOfferNote] = useState('')
   const [showOffer, setShowOffer] = useState(false)
 
-  // mock payment state
-  const [payRef, setPayRef]     = useState('')
-  const [payStep, setPayStep]   = useState('idle') // idle | form | done
+  // payment UI state
+  const [payStep, setPayStep] = useState('idle') // idle | done
 
   const load = useCallback(async () => {
     const [o, f, l, n, p] = await Promise.all([
@@ -188,26 +190,84 @@ export default function ClientOrderDetail() {
     } finally { setSaving(false) }
   }
 
-  // Client submits payment reference
-  const submitPayment = async () => {
-    if (!payment) return
+  // ── Razorpay payment handler ──────────────────────────────────────────────
+  const handleRazorpayPayment = async () => {
+    if (!payment || !rzpReady) return
+    setPayError('')
     setSaving(true)
+
     try {
-      await supabase.from('visit_payments').update({
-        payment_ref: payRef.trim() || null,
-        status: 'paid',
-        paid_at: new Date().toISOString(),
-      }).eq('id', payment.id)
+      // 1. Ask Edge Function to create a Razorpay order
+      const { data: { session } } = await supabase.auth.getSession()
+      const fnRes = await supabase.functions.invoke('create-razorpay-order', {
+        body: { amount_inr: Number(payment.amount), order_id: id },
+        headers: session?.access_token
+          ? { Authorization: `Bearer ${session.access_token}` }
+          : {},
+      })
 
-      await supabase.from('design_orders').update({
-        status: 'visit_paid',
-        visit_payment_status: 'paid',
-      }).eq('id', id)
+      if (fnRes.error || !fnRes.data?.id) {
+        throw new Error(fnRes.error?.message || fnRes.data?.error || 'Could not create payment order')
+      }
 
-      setPayStep('done')
-      await load()
-    } finally { setSaving(false) }
+      const rzpOrder = fnRes.data
+
+      // 2. Open Razorpay checkout
+      const options = {
+        key:      process.env.REACT_APP_RAZORPAY_KEY_ID,
+        amount:   rzpOrder.amount,        // paise, echoed from Razorpay
+        currency: rzpOrder.currency,
+        name:     'RainWater Consultants',
+        description: 'Site Visit Fee (adjustable against services)',
+        order_id: rzpOrder.id,            // rzp_order_id from API
+        prefill: {},                      // optionally add name/email/contact from user profile
+        theme: { color: '#01696f' },
+
+        // ── Success handler ──────────────────────────────────────────────
+        handler: async (response) => {
+          // response.razorpay_payment_id, response.razorpay_order_id, response.razorpay_signature
+          try {
+            // 3. Mark payment as paid in Supabase
+            await supabase.from('visit_payments').update({
+              payment_ref:        response.razorpay_payment_id,
+              gateway_order_id:   response.razorpay_order_id,
+              gateway_signature:  response.razorpay_signature,
+              status:             'paid',
+              paid_at:            new Date().toISOString(),
+              gateway:            'razorpay',
+            }).eq('id', payment.id)
+
+            await supabase.from('design_orders').update({
+              status:               'visit_paid',
+              visit_payment_status: 'paid',
+            }).eq('id', id)
+
+            setPayStep('done')
+            await load()
+          } catch (e) {
+            setPayError('Payment captured but failed to save. Please contact support with Ref: ' + response.razorpay_payment_id)
+          }
+        },
+
+        // ── Dismiss handler ──────────────────────────────────────────────
+        modal: {
+          ondismiss: () => { setSaving(false) },
+        },
+      }
+
+      const rzp = new window.Razorpay(options)
+      rzp.on('payment.failed', (resp) => {
+        setPayError(`Payment failed: ${resp.error?.description || 'Unknown error'}. Please try again.`)
+        setSaving(false)
+      })
+      rzp.open()
+      // Don't setSaving(false) here — it's handled by success/failure/dismiss
+    } catch (err) {
+      setPayError(err.message || 'Something went wrong. Please try again.')
+      setSaving(false)
+    }
   }
+  // ──────────────────────────────────────────────────────────────────────────
 
   if (loading) return (
     <div style={{ padding: '2rem', color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>Loading…</div>
@@ -247,12 +307,9 @@ export default function ClientOrderDetail() {
         <StatusBadge status={order.status} />
       </div>
 
-      {/* ── Payment CTA — highest priority ── */}
+      {/* ── Payment CTA ── */}
       {paymentDue && payStep === 'idle' && (
-        <Card style={{
-          border: '2px solid #c0392b',
-          background: 'rgba(192,57,43,0.04)',
-        }}>
+        <Card style={{ border: '2px solid #c0392b', background: 'rgba(192,57,43,0.04)' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
             <AlertCircle size={20} style={{ color: '#c0392b', flexShrink: 0, marginTop: 2 }} />
             <div style={{ flex: 1 }}>
@@ -261,7 +318,11 @@ export default function ClientOrderDetail() {
               </h2>
               <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', lineHeight: 1.6, marginBottom: '0.75rem' }}>
                 Your site visit has been confirmed for{' '}
-                <strong>{order.confirmed_visit_date ? new Date(order.confirmed_visit_date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' }) : '—'}</strong>
+                <strong>
+                  {order.confirmed_visit_date
+                    ? new Date(order.confirmed_visit_date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })
+                    : '—'}
+                </strong>
                 {order.confirmed_visit_time ? ` at ${order.confirmed_visit_time}` : ''}.
               </p>
               <div style={{
@@ -276,94 +337,35 @@ export default function ClientOrderDetail() {
                   💡 This amount will be fully adjusted if you proceed with our consultancy services.
                 </p>
               </div>
+
+              {payError && (
+                <p style={{ fontSize: 'var(--text-xs)', color: '#c0392b', marginBottom: '0.75rem', lineHeight: 1.5 }}>
+                  ⚠️ {payError}
+                </p>
+              )}
+
               <button
-                onClick={() => setPayStep('form')}
+                onClick={handleRazorpayPayment}
+                disabled={saving || !rzpReady}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '0.5rem',
                   padding: '0.65rem 1.4rem',
-                  background: '#c0392b', color: '#fff',
+                  background: saving ? '#999' : '#c0392b', color: '#fff',
                   border: 'none', borderRadius: 'var(--radius-md)',
-                  fontSize: 'var(--text-sm)', fontWeight: 700, cursor: 'pointer',
+                  fontSize: 'var(--text-sm)', fontWeight: 700,
+                  cursor: saving || !rzpReady ? 'not-allowed' : 'pointer',
+                  transition: 'background 180ms',
                 }}
               >
-                <CreditCard size={15} /> Pay ₹999 Now
+                <CreditCard size={15} />
+                {saving ? 'Opening payment…' : !rzpReady ? 'Loading…' : 'Pay ₹999 via Razorpay'}
               </button>
+
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)', marginTop: '0.6rem', lineHeight: 1.6 }}>
+                Secured by Razorpay · UPI, Cards, Net Banking, Wallets accepted
+              </p>
             </div>
           </div>
-        </Card>
-      )}
-
-      {/* ── Payment form ── */}
-      {paymentDue && payStep === 'form' && (
-        <Card style={{ border: '2px solid var(--color-primary)' }}>
-          <h2 style={{ fontSize: 'var(--text-base)', fontWeight: 800, color: 'var(--color-text)', marginBottom: '0.5rem' }}>Complete Payment — ₹999</h2>
-          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', lineHeight: 1.6, marginBottom: '1rem' }}>
-            Please transfer <strong>₹999</strong> to the UPI ID or bank account below, then enter your UPI transaction reference to confirm.
-          </p>
-
-          <div style={{
-            padding: '0.85rem 1rem',
-            background: 'var(--color-surface-offset)',
-            borderRadius: 'var(--radius-md)',
-            border: '1px solid var(--color-border)',
-            marginBottom: '1rem',
-          }}>
-            <p style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.4rem' }}>Pay via UPI</p>
-            <p style={{ fontSize: 'var(--text-sm)', fontWeight: 800, color: 'var(--color-primary)' }}>rainwaterconsultant@upi</p>
-            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)', marginTop: 3 }}>Amount: ₹999 · Reference: Visit Fee</p>
-          </div>
-
-          <div style={{ marginBottom: '0.85rem' }}>
-            <label style={{
-              display: 'block', fontSize: 'var(--text-xs)', fontWeight: 700,
-              color: 'var(--color-text-muted)', textTransform: 'uppercase',
-              letterSpacing: '0.08em', marginBottom: '0.35rem',
-            }}>UPI Transaction ID / Reference</label>
-            <input
-              type="text"
-              value={payRef}
-              onChange={e => setPayRef(e.target.value)}
-              placeholder="e.g. 407398571234"
-              style={{
-                width: '100%', padding: '0.65rem 0.9rem',
-                border: '1.5px solid var(--color-border)',
-                borderRadius: 'var(--radius-md)',
-                background: 'var(--color-bg)', color: 'var(--color-text)',
-                fontSize: 'var(--text-sm)', outline: 'none',
-              }}
-            />
-          </div>
-
-          <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
-            <button
-              onClick={submitPayment}
-              disabled={saving}
-              style={{
-                padding: '0.6rem 1.4rem',
-                background: 'var(--color-primary)', color: '#fff',
-                border: 'none', borderRadius: 'var(--radius-md)',
-                fontSize: 'var(--text-sm)', fontWeight: 700, cursor: 'pointer',
-              }}
-            >
-              {saving ? 'Confirming…' : 'Confirm Payment'}
-            </button>
-            <button
-              onClick={() => setPayStep('idle')}
-              style={{
-                padding: '0.6rem 1rem',
-                background: 'none', border: '1.5px solid var(--color-border)',
-                color: 'var(--color-text-muted)', borderRadius: 'var(--radius-md)',
-                fontSize: 'var(--text-sm)', fontWeight: 600, cursor: 'pointer',
-              }}
-            >
-              Back
-            </button>
-          </div>
-
-          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)', marginTop: '0.75rem', lineHeight: 1.6 }}>
-            💡 Once submitted, our team will verify the payment and confirm your visit within a few hours.
-            This amount is fully adjustable against consultancy services.
-          </p>
         </Card>
       )}
 
@@ -376,9 +378,13 @@ export default function ClientOrderDetail() {
               <p style={{ fontSize: 'var(--text-sm)', fontWeight: 800, color: '#27ae60' }}>Visit Fee Paid — ₹999</p>
               <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 2 }}>
                 Our engineer will visit on{' '}
-                <strong>{order.confirmed_visit_date ? new Date(order.confirmed_visit_date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'long' }) : '—'}</strong>
+                <strong>
+                  {order.confirmed_visit_date
+                    ? new Date(order.confirmed_visit_date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'long' })
+                    : '—'}
+                </strong>
                 {order.confirmed_visit_time ? ` at ${order.confirmed_visit_time}` : ''}.
-                {payment?.payment_ref ? ` Ref: ${payment.payment_ref}` : ''}
+                {payment?.payment_ref ? ` · Ref: ${payment.payment_ref}` : ''}
               </p>
             </div>
           </div>
@@ -411,7 +417,7 @@ export default function ClientOrderDetail() {
             </div>
           )}
 
-          {/* Latest pending admin offer — show Accept / Counter */}
+          {/* Latest pending admin offer */}
           {pendingAdminOffer && order.status !== 'visit_payment_due' && (
             <div style={{
               padding: '1rem 1.1rem', borderRadius: 'var(--radius-lg)',
@@ -474,7 +480,7 @@ export default function ClientOrderDetail() {
             </div>
           )}
 
-          {/* No offers yet — client can propose first */}
+          {/* No offers yet */}
           {negotiations.length === 0 && order.status === 'pending' && (
             <div style={{
               padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)',
@@ -490,8 +496,7 @@ export default function ClientOrderDetail() {
           {/* Counter-offer form */}
           {(showOffer || (negotiations.length === 0 && order.visit_preferred && order.status === 'pending')) && order.status !== 'visit_payment_due' && order.status !== 'visit_paid' && order.status !== 'visit_scheduled' && order.status !== 'visit_complete' && (
             <div style={{
-              padding: '1rem 1.1rem',
-              borderRadius: 'var(--radius-lg)',
+              padding: '1rem 1.1rem', borderRadius: 'var(--radius-lg)',
               border: '1.5px solid var(--color-primary)',
               background: 'rgba(11,111,184,0.04)',
               marginTop: showOffer ? '0.75rem' : 0,
