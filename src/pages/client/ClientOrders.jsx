@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
-import { ClipboardList, ArrowRight, MapPin, BadgeCheck, Calendar } from 'lucide-react'
+import { ClipboardList, ArrowRight, MapPin, Calendar } from 'lucide-react'
 
 const STATUS_COLOR = {
   pending:             { bg: '#fef3c7', text: '#92400e' },
