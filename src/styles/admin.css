@@ -156,6 +156,30 @@
 .admin-sidebar-hint h3 { margin: 0 0 var(--space-1); font-size: var(--text-sm); }
 .admin-sidebar-hint p { margin: 0; font-size: var(--text-xs); color: var(--color-text-muted); line-height: 1.6; }
 
+/* ── Sign Out button ── */
+.admin-signout-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  margin-top: var(--space-2);
+}
+
+.admin-signout-btn:hover {
+  background: #fff0f0;
+  color: #c0392b;
+  border-color: #f5c6c6;
+}
+
 /* ── Main content area ── */
 .admin-main {
   padding: var(--space-8);
@@ -1086,6 +1110,252 @@
 
 .admin-empty-state h3 { margin: 0; font-size: var(--text-lg); color: var(--color-text); }
 .admin-empty-state p { margin: 0; font-size: var(--text-sm); max-width: 36ch; }
+
+/* ============================================================
+   DARK MODE — Admin Dashboard
+   Deep navy/black surfaces, white text
+============================================================ */
+[data-theme="dark"] .admin-sidebar {
+  background: #0d1117;
+  border-right-color: #21262d;
+}
+
+[data-theme="dark"] .admin-main {
+  background:
+    radial-gradient(circle at top left, rgba(79,152,163,0.06), transparent 28%),
+    radial-gradient(circle at top right, rgba(12,95,116,0.06), transparent 28%),
+    #0d1117;
+}
+
+[data-theme="dark"] .admin-shell {
+  background: #0d1117;
+}
+
+/* Sidebar brand */
+[data-theme="dark"] .admin-brand-text small { color: #6e7681; }
+[data-theme="dark"] .admin-brand-text h1 { color: #f0f6fc; }
+
+/* Nav links */
+[data-theme="dark"] .admin-nav a {
+  color: #8b949e;
+}
+[data-theme="dark"] .admin-nav a:hover {
+  color: #f0f6fc;
+  background: #161b22;
+}
+[data-theme="dark"] .admin-nav a.active {
+  color: #58a6ff;
+  background: #1c2a3a;
+}
+[data-theme="dark"] .admin-nav-indicator {
+  background: #1c2a3a;
+}
+
+/* Sidebar hint box */
+[data-theme="dark"] .admin-sidebar-hint {
+  background: linear-gradient(160deg, rgba(79,152,163,0.1), rgba(12,95,116,0.12));
+  border-color: rgba(79,152,163,0.2);
+}
+[data-theme="dark"] .admin-sidebar-hint h3 { color: #c9d1d9; }
+[data-theme="dark"] .admin-sidebar-hint p  { color: #6e7681; }
+[data-theme="dark"] .admin-hint-dot { background: #58a6ff; }
+
+/* Sign out button */
+[data-theme="dark"] .admin-signout-btn {
+  border-color: #21262d;
+  color: #6e7681;
+}
+[data-theme="dark"] .admin-signout-btn:hover {
+  background: #1e1215;
+  color: #f85149;
+  border-color: #3d1c1c;
+}
+
+/* Cards — use dark navy surfaces */
+[data-theme="dark"] .admin-card,
+[data-theme="dark"] .admin-metric-chip,
+[data-theme="dark"] .admin-kanban-card,
+[data-theme="dark"] .admin-timeline-item,
+[data-theme="dark"] .admin-metric-card,
+[data-theme="dark"] .admin-customer-card {
+  background: #161b22;
+  border-color: #21262d;
+  color: #c9d1d9;
+}
+
+/* Pipeline steps */
+[data-theme="dark"] .admin-pipeline-step {
+  background: #161b22;
+  border-color: #21262d;
+  color: #c9d1d9;
+}
+[data-theme="dark"] .admin-pipeline-step p { color: #8b949e; }
+
+/* Design board */
+[data-theme="dark"] .admin-design-card {
+  background: #1c2128;
+  border-color: #30363d;
+  color: #c9d1d9;
+}
+[data-theme="dark"] .admin-design-column {
+  background: #161b22;
+}
+[data-theme="dark"] .admin-design-col-header {
+  border-bottom-color: #30363d;
+}
+
+/* Ring donut inner circle */
+[data-theme="dark"] .admin-ring::before {
+  background: #161b22;
+}
+[data-theme="dark"] .admin-ring {
+  background: conic-gradient(#58a6ff 0 var(--pct, 0%), #21262d var(--pct, 0%) 100%);
+}
+
+/* Visit list items */
+[data-theme="dark"] .admin-visit-list li {
+  background: #161b22;
+}
+[data-theme="dark"] .admin-visit-list li:hover {
+  background: #1c2128;
+}
+
+/* Filter tabs */
+[data-theme="dark"] .admin-filter-tab {
+  background: #161b22;
+  border-color: #30363d;
+  color: #8b949e;
+}
+[data-theme="dark"] .admin-filter-tab:hover {
+  background: #1c2128;
+  color: #c9d1d9;
+}
+[data-theme="dark"] .admin-filter-tab.active {
+  background: #1c3a5e;
+  color: #58a6ff;
+  border-color: #1c3a5e;
+  box-shadow: 0 2px 10px rgba(88,166,255,0.15);
+}
+
+/* Search bar */
+[data-theme="dark"] .admin-search-bar {
+  background: #161b22;
+  border-color: #30363d;
+}
+[data-theme="dark"] .admin-search-bar:focus-within {
+  border-color: #58a6ff;
+  box-shadow: 0 0 0 3px rgba(88,166,255,0.12);
+}
+
+/* View toggle */
+[data-theme="dark"] .admin-view-toggle {
+  background: #161b22;
+  border-color: #30363d;
+}
+[data-theme="dark"] .admin-view-btn { color: #8b949e; }
+[data-theme="dark"] .admin-view-btn.active {
+  background: #1c3a5e;
+  color: #58a6ff;
+}
+
+/* Buttons */
+[data-theme="dark"] .admin-btn.secondary {
+  background: #161b22;
+  color: #c9d1d9;
+  border-color: #30363d;
+}
+[data-theme="dark"] .admin-btn.secondary:hover {
+  background: #1c2128;
+}
+
+/* Kanban mini items */
+[data-theme="dark"] .admin-mini-item {
+  background: #1c2128;
+  border-color: #30363d;
+}
+[data-theme="dark"] .admin-mini-item:hover { background: #21262d; }
+[data-theme="dark"] .admin-mini-item strong { color: #c9d1d9; }
+[data-theme="dark"] .admin-mini-item span   { color: #6e7681; }
+
+/* Kanban count badge */
+[data-theme="dark"] .admin-kanban-count {
+  background: #21262d;
+  color: #8b949e;
+}
+
+/* Table */
+[data-theme="dark"] .admin-table th,
+[data-theme="dark"] .admin-table td {
+  border-bottom-color: #21262d;
+}
+[data-theme="dark"] .admin-table-row:hover { background: #161b22; }
+[data-theme="dark"] .admin-table td span  { color: #8b949e; }
+[data-theme="dark"] .admin-table td strong { color: #c9d1d9; }
+
+/* Status badges — subtle dark-mode tints */
+[data-theme="dark"] .admin-status.pending,
+[data-theme="dark"] .admin-tag-pending,
+[data-theme="dark"] .admin-status-pill.pending  { background: #2d1f0a; color: #ffa657; }
+[data-theme="dark"] .admin-status.partial,
+[data-theme="dark"] .admin-tag-partial,
+[data-theme="dark"] .admin-status-pill.partial  { background: #0d2438; color: #58a6ff; }
+[data-theme="dark"] .admin-status.paid,
+[data-theme="dark"] .admin-tag-paid,
+[data-theme="dark"] .admin-tag-payment,
+[data-theme="dark"] .admin-status-pill.paid     { background: #0d2818; color: #3fb950; }
+[data-theme="dark"] .admin-status.design,
+[data-theme="dark"] .admin-tag-design           { background: #0d2438; color: #58a6ff; }
+[data-theme="dark"] .admin-status.visit,
+[data-theme="dark"] .admin-tag-visit            { background: #2d1f0a; color: #ffa657; }
+[data-theme="dark"] .admin-status.lead,
+[data-theme="dark"] .admin-tag-lead             { background: #1a1f2d; color: #79c0ff; }
+
+/* Progress bar track */
+[data-theme="dark"] .admin-bar { background: #21262d; }
+[data-theme="dark"] .admin-bar-chart-bar { background: #21262d; }
+
+/* Bar chart fill — use blue in dark mode */
+[data-theme="dark"] .admin-bar-chart-fill {
+  background: linear-gradient(180deg, #58a6ff, #1c3a5e);
+}
+
+/* Page title / eyebrow */
+[data-theme="dark"] .admin-eyebrow { color: #58a6ff; }
+[data-theme="dark"] .admin-hero-title { color: #f0f6fc; }
+[data-theme="dark"] .admin-hero-sub   { color: #8b949e; }
+
+/* Ring content text */
+[data-theme="dark"] .admin-ring-content strong { color: #f0f6fc; }
+[data-theme="dark"] .admin-ring-content span   { color: #8b949e; }
+
+/* Timeline items */
+[data-theme="dark"] .admin-timeline-item small { color: #58a6ff; }
+[data-theme="dark"] .admin-timeline-item h4    { color: #c9d1d9; }
+[data-theme="dark"] .admin-timeline-item p     { color: #6e7681; }
+
+/* Metric chip text */
+[data-theme="dark"] .admin-metric-chip small   { color: #6e7681; }
+[data-theme="dark"] .admin-metric-chip strong  { color: #f0f6fc; }
+[data-theme="dark"] .admin-metric-card small   { color: #6e7681; }
+[data-theme="dark"] .admin-metric-card strong  { color: #f0f6fc; }
+
+[data-theme="dark"] .chip-trend.up   { background: #0d2818; color: #3fb950; }
+[data-theme="dark"] .chip-trend.down { background: #2d1f0a; color: #ffa657; }
+
+/* Section headers */
+[data-theme="dark"] .admin-section-head h3 { color: #c9d1d9; }
+[data-theme="dark"] .admin-section-head p  { color: #6e7681; }
+
+/* Orb background in heartbeat card */
+[data-theme="dark"] .admin-heartbeat::after {
+  background: radial-gradient(circle, rgba(88,166,255,0.08), transparent 70%);
+}
+
+/* Skeleton in dark mode */
+[data-theme="dark"] .admin-skeleton {
+  background: linear-gradient(90deg, #161b22 25%, #1c2128 50%, #161b22 75%);
+  background-size: 200% 100%;
+}
 
 /* ── Responsive ── */
 @media (max-width: 1180px) {

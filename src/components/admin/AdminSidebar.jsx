@@ -1,5 +1,6 @@
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useRef } from 'react'
+import { useAuth } from '../../context/AuthContext'
 import ThemeToggle from '../ui/ThemeToggle'
 
 const NAV = [
@@ -80,6 +81,8 @@ const NAV = [
 
 export default function AdminSidebar() {
   const location = useLocation()
+  const navigate = useNavigate()
+  const { signOut, profile } = useAuth()
   const indicatorRef = useRef(null)
   const navRef = useRef(null)
 
@@ -93,6 +96,11 @@ export default function AdminSidebar() {
       indicator.style.opacity = '1'
     }
   }, [location.pathname])
+
+  const handleSignOut = async () => {
+    await signOut()
+    navigate('/login')
+  }
 
   return (
     <aside className="admin-sidebar">
@@ -135,6 +143,15 @@ export default function AdminSidebar() {
           <p>Lead → visit → drawing → payment → execution. Each section mirrors a real field handoff.</p>
         </div>
       </div>
+
+      <button className="admin-signout-btn" onClick={handleSignOut} aria-label="Sign out">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        <span>Sign Out{profile?.full_name ? ` (${profile.full_name.split(' ')[0]})` : ''}</span>
+      </button>
     </aside>
   )
 }
