@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CloudRain, Droplets, ArrowRight, RotateCcw, Loader2 } from 'lucide-react'
@@ -36,7 +36,6 @@ function AnimatedNumber({ value, unit = '' }) {
   return <span>{display.toLocaleString('en-IN')}{unit}</span>
 }
 
-
 const inputStyle = {
   width: '100%',
   padding: 'var(--space-3) var(--space-4)',
@@ -62,9 +61,8 @@ const labelStyle = {
 export default function Calculator() {
   const navigate = useNavigate()
   const location = useLocation()
+  const resultsRef = useRef(null)
 
-  // When rendered as a nested route under /client, hide the public navbar.
-  // ClientDashboard already provides its own sidebar + header.
   const isClientRoute = location.pathname.startsWith('/client')
 
   const [selectedCity, setSelectedCity] = useState(null)
@@ -108,6 +106,12 @@ export default function Calculator() {
       scenario: selectedScenario,
     })
     setCalculated(true)
+    // Scroll results into view on mobile after a short paint delay
+    setTimeout(() => {
+      if (window.innerWidth < 768 && resultsRef.current) {
+        resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }, 120)
   }, [selectedCity, breakdown, selectedScenario, roofTypes, form])
 
   const reset = useCallback(() => { setResult(null); setCalculated(false); setSelectedScenario('average') }, [])
@@ -135,9 +139,28 @@ export default function Calculator() {
         .unit-toggle button.active { background:var(--color-primary); border-color:var(--color-primary); color:#fff; }
         .unit-toggle button:first-child { border-radius:var(--radius-md) 0 0 var(--radius-md); border-right:none; }
         .unit-toggle button:last-child  { border-radius:0 var(--radius-md) var(--radius-md) 0; }
+
+        /* Layout grid — side-by-side on desktop, single column on mobile */
+        .calc-grid {
+          display: grid;
+          gap: var(--space-8);
+          align-items: start;
+        }
+        .calc-grid.has-results {
+          grid-template-columns: 1fr 1fr;
+        }
+        @media (max-width: 767px) {
+          .calc-grid,
+          .calc-grid.has-results {
+            grid-template-columns: 1fr !important;
+          }
+          /* Remove sticky on mobile — results just flow below */
+          .calc-results-sticky {
+            position: static !important;
+          }
+        }
       `}</style>
 
-      {/* Only render public Navbar on the public /calculator route */}
       {!isClientRoute && <Navbar />}
 
       <div style={{ paddingTop: isClientRoute ? '0' : '64px' }}>
@@ -178,12 +201,7 @@ export default function Calculator() {
         {/* Form + Results */}
         <section style={{ paddingTop:'var(--space-8)', paddingBottom:'var(--space-20)' }}>
           <div className="container">
-            <div style={{
-              display:             'grid',
-              gridTemplateColumns: calculated ? '1fr 1fr' : '1fr',
-              gap:                 'var(--space-8)',
-              alignItems:          'start',
-            }}>
+            <div className={`calc-grid${calculated ? ' has-results' : ''}`}>
 
               {/* ── Form card ── */}
               <div style={{
@@ -286,11 +304,15 @@ export default function Calculator() {
               {/* ── Results panel ── */}
               <AnimatePresence>
                 {calculated && result && (
-                  <motion.div key="results"
-                    initial={{ opacity:0, x:40 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:40 }}
-                    transition={{ duration:0.65, ease:[0.16,1,0.3,1] }}
+                  <motion.div
+                    key="results"
+                    ref={resultsRef}
+                    initial={{ opacity:0, y: 32 }}
+                    animate={{ opacity:1, y: 0 }}
+                    exit={{ opacity:0, y: 32 }}
+                    transition={{ duration:0.55, ease:[0.16,1,0.3,1] }}
                   >
-                    <div style={{ background:'var(--color-surface)', borderRadius:'var(--radius-xl)', border:'1px solid var(--color-border)', padding:'var(--space-8)', boxShadow:'var(--shadow-md)', position:'sticky', top:80 }}>
+                    <div className="calc-results-sticky" style={{ background:'var(--color-surface)', borderRadius:'var(--radius-xl)', border:'1px solid var(--color-border)', padding:'var(--space-8)', boxShadow:'var(--shadow-md)', position:'sticky', top:80 }}>
                       <div style={{ marginBottom:'var(--space-6)' }}>
                         <h2 style={{ fontFamily:'var(--font-display)', fontSize:'var(--text-xl)', fontWeight:700, color:'var(--color-text)', marginBottom:4 }}>Your Rainwater Potential</h2>
                         <p style={{ fontSize:'var(--text-xs)', color:'var(--color-text-faint)' }}>
