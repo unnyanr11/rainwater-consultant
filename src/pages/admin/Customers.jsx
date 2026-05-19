@@ -8,6 +8,7 @@ import PageTransition from '../../components/motion/PageTransition'
 
 export default function AdminCustomers() {
   const [customers, setCustomers] = useState([])
+  const [allOrders, setAllOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
 
@@ -17,9 +18,13 @@ export default function AdminCustomers() {
         .from('design_orders')
         .select('id, contact_name, contact_email, contact_phone, building_type, status, message, created_at')
         .order('created_at', { ascending: false })
-      // Deduplicate by contact_email (more reliable than name)
+
+      const rows = data || []
+      setAllOrders(rows)
+
+      // Deduplicate by contact_email (fallback to contact_name)
       const seen = new Set()
-      const unique = (data || []).filter(d => {
+      const unique = rows.filter(d => {
         const key = d.contact_email || d.contact_name
         if (!key || seen.has(key)) return false
         seen.add(key)
@@ -31,14 +36,19 @@ export default function AdminCustomers() {
     load()
   }, [])
 
-  const active = customers.filter(c => !['completed', 'cancelled'].includes(c.status)).length
+  const active    = customers.filter(c => !['completed', 'cancelled'].includes(c.status)).length
   const completed = customers.filter(c => c.status === 'completed').length
 
+  // Calculate real avg projects per unique client
+  const avgProjects = customers.length
+    ? (allOrders.length / customers.length).toFixed(1)
+    : '—'
+
   const stats = [
-    { label: 'Total clients', value: String(customers.length).padStart(2, '0'), sub: 'Unique accounts' },
-    { label: 'Active', value: String(active).padStart(2, '0'), sub: 'Open files', trend: 4 },
-    { label: 'Completed', value: String(completed).padStart(2, '0'), sub: 'Closed projects' },
-    { label: 'Avg projects', value: customers.length ? '1.2' : '—', sub: 'Per client' },
+    { label: 'Total clients',  value: String(customers.length).padStart(2, '0'), sub: 'Unique accounts' },
+    { label: 'Active',         value: String(active).padStart(2, '0'),           sub: 'Open files', trend: 4 },
+    { label: 'Completed',      value: String(completed).padStart(2, '0'),        sub: 'Closed projects' },
+    { label: 'Avg projects',   value: avgProjects,                               sub: 'Per client' },
   ]
 
   const filtered = search
@@ -50,9 +60,15 @@ export default function AdminCustomers() {
     : customers
 
   const STATUS_COLOR = {
-    pending: 'pending', visit_scheduled: 'visit', visit_complete: 'partial',
-    measurement_done: 'lead', drawing_in_progress: 'visit', drawing_review: 'partial',
-    drawing_ready: 'design', completed: 'paid', cancelled: 'pending',
+    pending:             'pending',
+    visit_scheduled:     'visit',
+    visit_complete:      'partial',
+    measurement_done:    'lead',
+    drawing_in_progress: 'visit',
+    drawing_review:      'partial',
+    drawing_ready:       'design',
+    completed:           'paid',
+    cancelled:           'pending',
   }
 
   if (loading) return (

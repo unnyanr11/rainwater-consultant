@@ -6,9 +6,9 @@ import AdminStatRow from '../../components/admin/AdminStatRow'
 import PageTransition from '../../components/motion/PageTransition'
 
 export default function AdminReports() {
-  const [orders, setOrders] = useState([])
+  const [orders, setOrders]     = useState([])
   const [payments, setPayments] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading]   = useState(true)
 
   useEffect(() => {
     async function load() {
@@ -24,7 +24,12 @@ export default function AdminReports() {
   }, [])
 
   const totalRevenue = payments.filter(p => p.payment_status === 'paid').reduce((s, p) => s + (p.amount_inr || 0), 0)
-  const fmt = (n) => n >= 100000 ? `₹${(n / 100000).toFixed(2)}L` : `₹${(n / 1000).toFixed(1)}K`
+  const fmt = (n) => {
+    if (!n || n === 0) return '₹0'
+    if (n >= 100000) return `₹${(n / 100000).toFixed(2)}L`
+    if (n >= 1000)   return `₹${(n / 1000).toFixed(1)}K`
+    return `₹${Math.round(n)}`
+  }
 
   const now = new Date()
   const months = Array.from({ length: 6 }, (_, i) => {
@@ -49,10 +54,10 @@ export default function AdminReports() {
   const typeData = Object.entries(typeMap).sort((a, b) => b[1] - a[1]).slice(0, 5)
 
   const stats = [
-    { label: 'Total revenue', value: fmt(totalRevenue), sub: 'Collected payments', trend: 12 },
-    { label: 'Total orders', value: String(orders.length).padStart(2, '0'), sub: 'All time', trend: 6 },
-    { label: 'Avg order value', value: orders.length ? fmt(totalRevenue / orders.length) : '—', sub: 'Per project' },
-    { label: 'Completion rate', value: orders.length ? `${Math.round((orders.filter(o => o.status === 'completed').length / orders.length) * 100)}%` : '—', sub: 'Projects closed', trend: 3 },
+    { label: 'Total revenue',    value: fmt(totalRevenue),                                                                                                       sub: 'Collected payments', trend: 12 },
+    { label: 'Total orders',     value: String(orders.length).padStart(2, '0'),                                                                                  sub: 'All time', trend: 6 },
+    { label: 'Avg order value',  value: orders.length ? fmt(totalRevenue / orders.length) : '—',                                                                 sub: 'Per project' },
+    { label: 'Completion rate',  value: orders.length ? `${Math.round((orders.filter(o => o.status === 'completed').length / orders.length) * 100)}%` : '—',    sub: 'Projects closed', trend: 3 },
   ]
 
   if (loading) return (
@@ -124,18 +129,22 @@ export default function AdminReports() {
 
           <article className="admin-card admin-panel admin-stagger-in">
             <div className="admin-section-head">
-              <div><h3>Pipeline overview</h3><p>Order counts at each stage.</p></div>
+              <div><h3>Pipeline overview</h3><p>Order counts at each stage — full funnel.</p></div>
             </div>
             <div className="admin-pipeline-overview">
               {[
-                { label: 'Leads', status: 'pending', color: 'lead' },
-                { label: 'Visit scheduled', status: 'visit_scheduled', color: 'visit' },
-                { label: 'Visit done', status: 'visit_complete', color: 'partial' },
-                { label: 'Measured', status: 'measurement_done', color: 'lead' },
-                { label: 'Drawing', status: 'drawing_in_progress', color: 'visit' },
-                { label: 'Review', status: 'drawing_review', color: 'partial' },
-                { label: 'Ready', status: 'drawing_ready', color: 'design' },
-                { label: 'Completed', status: 'completed', color: 'paid' },
+                { label: 'New Leads',       status: 'pending',                   color: 'lead'    },
+                { label: 'Negotiating',     status: 'visit_negotiating',         color: 'partial' },
+                { label: 'Payment Due',     status: 'visit_payment_due',         color: 'overdue' },
+                { label: 'Visit Paid',      status: 'visit_paid',                color: 'paid'    },
+                { label: 'Scheduled',       status: 'visit_scheduled',           color: 'visit'   },
+                { label: 'Confirmed',       status: 'visit_scheduled_confirmed', color: 'visit'   },
+                { label: 'Visit Done',      status: 'visit_complete',            color: 'partial' },
+                { label: 'Measured',        status: 'measurement_done',          color: 'lead'    },
+                { label: 'Drawing',         status: 'drawing_in_progress',       color: 'visit'   },
+                { label: 'Review',          status: 'drawing_review',            color: 'partial' },
+                { label: 'Ready',           status: 'drawing_ready',             color: 'design'  },
+                { label: 'Completed',       status: 'completed',                 color: 'paid'    },
               ].map((s, i) => {
                 const count = orders.filter(o => o.status === s.status).length
                 return (

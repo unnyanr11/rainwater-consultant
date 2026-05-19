@@ -20,9 +20,9 @@ export default function AdminDashboard() {
   useEffect(() => {
     async function load() {
       const [ordersRes, paymentsRes, visitsRes, lanesRes] = await Promise.all([
-        supabase.from('design_orders').select('id, status, created_at'),
+        supabase.from('design_orders').select('id, status, created_at, confirmed_visit_date, visit_date'),
         supabase.from('order_payments').select('id, amount_inr, payment_status, created_at, design_orders(contact_name, building_type, status)'),
-        supabase.from('design_orders').select('id, status').in('status', ['visit_scheduled', 'visit_complete', 'measurement_done']),
+        supabase.from('design_orders').select('id, status').in('status', ['visit_scheduled', 'visit_scheduled_confirmed', 'visit_complete', 'measurement_done']),
         supabase.from('design_orders').select('id, contact_name, building_type, status, message').limit(12),
       ])
 
@@ -32,7 +32,7 @@ export default function AdminDashboard() {
       const lanes = lanesRes.data || []
 
       const totalCollected = pays.filter(p => p.payment_status === 'paid').reduce((s, p) => s + (p.amount_inr || 0), 0)
-      const visitsPending = orders.filter(o => o.status === 'visit_scheduled').length
+      const visitsPending = orders.filter(o => o.status === 'visit_scheduled' || o.status === 'visit_scheduled_confirmed').length
       const drawingsBlocked = orders.filter(o => o.status === 'measurement_done').length
 
       setStats({ totalCollected, visitsPending, drawingsBlocked, totalPaymentsCount: pays.filter(p => p.payment_status === 'paid').length })
@@ -42,10 +42,10 @@ export default function AdminDashboard() {
       const designs = orders.filter(o => ['drawing_in_progress', 'drawing_review', 'drawing_ready'].includes(o.status)).length
       const pendingAmount = pays.filter(p => p.payment_status !== 'paid').reduce((s, p) => s + (p.amount_inr || 0), 0)
       setPipeline([
-        { label: 'Leads', value: leads, tag: 'lead', desc: 'Fresh consultation requests needing qualification.' },
-        { label: 'Visits', value: visitsCount, tag: 'visit', desc: 'Physical inspections mapped by urgency and distance.' },
-        { label: 'Designs', value: designs, tag: 'design', desc: 'Drawings under review, revisions, or ready to release.' },
-        { label: 'Payments', value: `₹${(pendingAmount / 100000).toFixed(2)}L`, tag: 'payment', desc: 'Pending against estimates, visits, and design milestones.' },
+        { label: 'Leads',    value: leads,      tag: 'lead',    desc: 'Fresh consultation requests needing qualification.' },
+        { label: 'Visits',   value: visitsCount, tag: 'visit',  desc: 'Physical inspections mapped by urgency and distance.' },
+        { label: 'Designs',  value: designs,    tag: 'design',  desc: 'Drawings under review, revisions, or ready to release.' },
+        { label: 'Payments', value: fmt(pendingAmount), tag: 'payment', desc: 'Pending against estimates, visits, and design milestones.' },
       ])
 
       const recentPays = pays.slice(0, 4).map(p => ({
@@ -58,16 +58,22 @@ export default function AdminDashboard() {
       }))
       setPayments(recentPays)
 
+      // Fix: count today's visits by confirmed_visit_date or visit_date — not created_at
+      const todayStr = new Date().toDateString()
+      const todayVisits = orders.filter(o => {
+        if (o.status !== 'visit_scheduled' && o.status !== 'visit_scheduled_confirmed') return false
+        const dateToCheck = o.confirmed_visit_date || o.visit_date
+        if (!dateToCheck) return false
+        return new Date(dateToCheck).toDateString() === todayStr
+      }).length
+
       const completedVisits = orders.filter(o => o.status === 'visit_complete' || o.status === 'measurement_done').length
-      const totalVisits = visits.length || 1
+      const totalVisits = Math.max(visits.length, 1)
       setVisitStats({
         completed: completedVisits,
         total: totalVisits,
         pct: Math.round((completedVisits / totalVisits) * 100),
-        today: orders.filter(o => {
-          const d = new Date(o.created_at); const now = new Date()
-          return o.status === 'visit_scheduled' && d.toDateString() === now.toDateString()
-        }).length,
+        today: todayVisits,
         conversion: 58,
         avgRadius: 12,
       })
@@ -77,21 +83,21 @@ export default function AdminDashboard() {
       const delayed = pays.filter(p => p.payment_status === 'pending').length
       const unlocked = orders.filter(o => o.status === 'drawing_ready').length
       setRevenueMetrics([
-        { label: 'Collection ratio', value: `${Math.round((paid / total) * 100)}%`, pct: (paid / total) * 100 },
-        { label: 'Visit monetization', value: `₹${(totalCollected / Math.max(visitsCount, 1)).toFixed(0)}`, pct: 58 },
-        { label: 'Design unlock rate', value: `${Math.round((unlocked / Math.max(designs + unlocked, 1)) * 100)}%`, pct: (unlocked / Math.max(designs + unlocked, 1)) * 100 },
-        { label: 'Delayed accounts', value: delayed, pct: (delayed / total) * 100 },
+        { label: 'Collection ratio',    value: `${Math.round((paid / total) * 100)}%`,                                                         pct: (paid / total) * 100 },
+        { label: 'Visit monetization',  value: fmt(totalCollected / Math.max(visitsCount, 1)),                                                 pct: 58 },
+        { label: 'Design unlock rate',  value: `${Math.round((unlocked / Math.max(designs + unlocked, 1)) * 100)}%`,                           pct: (unlocked / Math.max(designs + unlocked, 1)) * 100 },
+        { label: 'Delayed accounts',    value: delayed,                                                                                        pct: (delayed / total) * 100 },
       ])
 
-      const fieldItems = lanes.filter(o => ['visit_scheduled', 'pending'].includes(o.status)).slice(0, 3)
+      const fieldItems  = lanes.filter(o => ['visit_scheduled', 'visit_scheduled_confirmed', 'pending'].includes(o.status)).slice(0, 3)
       const designItems = lanes.filter(o => ['measurement_done', 'drawing_in_progress', 'drawing_review'].includes(o.status)).slice(0, 3)
-      const closeItems = lanes.filter(o => ['drawing_ready', 'completed'].includes(o.status)).slice(0, 3)
+      const closeItems  = lanes.filter(o => ['drawing_ready', 'completed'].includes(o.status)).slice(0, 3)
       setWorkLanes({ field: fieldItems, design: designItems, close: closeItems })
 
       setTimeline([
-        { time: 'Today', title: `${pays.filter(p => p.payment_status === 'pending').length} payment reminders pending`, body: 'Clients with unpaid milestones need follow-up.' },
-        { time: 'Recent', title: `${orders.filter(o => o.status === 'measurement_done').length} measurements ready for drafting`, body: 'Field dimensions received, drawings can move to draft stage.' },
-        { time: 'This week', title: `${orders.filter(o => o.status === 'completed').length} consultations closed`, body: 'Files archived with full payment trails.' },
+        { time: 'Today',     title: `${pays.filter(p => p.payment_status === 'pending').length} payment reminders pending`,          body: 'Clients with unpaid milestones need follow-up.' },
+        { time: 'Recent',    title: `${orders.filter(o => o.status === 'measurement_done').length} measurements ready for drafting`, body: 'Field dimensions received, drawings can move to draft stage.' },
+        { time: 'This week', title: `${orders.filter(o => o.status === 'completed').length} consultations closed`,                   body: 'Files archived with full payment trails.' },
       ])
 
       setLoading(false)
@@ -99,7 +105,13 @@ export default function AdminDashboard() {
     load()
   }, [])
 
-  const fmt = (n) => n >= 100000 ? `₹${(n / 100000).toFixed(2)}L` : `₹${(n / 1000).toFixed(1)}K`
+  // Correctly format rupee amounts at any scale
+  const fmt = (n) => {
+    if (!n || n === 0) return '₹0'
+    if (n >= 100000) return `₹${(n / 100000).toFixed(2)}L`
+    if (n >= 1000)   return `₹${(n / 1000).toFixed(1)}K`
+    return `₹${Math.round(n)}`
+  }
 
   if (loading) return (
     <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>
@@ -113,7 +125,6 @@ export default function AdminDashboard() {
         <AdminSidebar />
         <main className="admin-main">
 
-          {/* Topbar */}
           <section className="admin-topbar">
             <div>
               <small className="admin-eyebrow">Rainwater Consultant Admin</small>
@@ -126,7 +137,6 @@ export default function AdminDashboard() {
             </div>
           </section>
 
-          {/* Hero grid */}
           <section className="admin-hero-grid">
             <article className="admin-card admin-heartbeat">
               <div className="admin-section-head">
@@ -159,7 +169,6 @@ export default function AdminDashboard() {
             </aside>
           </section>
 
-          {/* Content grid */}
           <section className="admin-content-grid">
             <article className="admin-card admin-table-card">
               <div className="admin-section-head">
@@ -176,7 +185,11 @@ export default function AdminDashboard() {
                     <tr key={i}>
                       <td><strong>{p.client}</strong><span>{p.project?.replace(/_/g, ' ')}</span></td>
                       <td><span>{p.stage?.replace(/_/g, ' ')}</span></td>
-                      <td><span className={`admin-status ${p.paymentStatus === 'paid' ? 'paid' : p.paymentStatus === 'partial' ? 'partial' : 'pending'}`}>{p.paymentStatus === 'paid' ? `₹${p.amount?.toLocaleString()} paid` : p.paymentStatus === 'partial' ? `₹${p.amount?.toLocaleString()} partial` : 'Pending'}</span></td>
+                      <td>
+                        <span className={`admin-status ${p.paymentStatus === 'paid' ? 'paid' : p.paymentStatus === 'partial' ? 'partial' : 'pending'}`}>
+                          {p.paymentStatus === 'paid' ? `₹${p.amount?.toLocaleString()} paid` : p.paymentStatus === 'partial' ? `₹${p.amount?.toLocaleString()} partial` : 'Pending'}
+                        </span>
+                      </td>
                       <td><span>{p.action}</span></td>
                     </tr>
                   ))}
@@ -185,42 +198,49 @@ export default function AdminDashboard() {
             </article>
 
             <aside className="admin-card admin-panel">
-              <div className="admin-section-head"><div><h3>Decision timeline</h3><p>What needs attention today.</p></div></div>
-              <div className="admin-timeline">
-                {timeline.map((t, i) => (
-                  <div key={i} className="admin-timeline-item">
-                    <small>{t.time}</small>
-                    <h4>{t.title}</h4>
-                    <p>{t.body}</p>
+              <div className="admin-section-head"><div><h3>Revenue metrics</h3><p>Collection performance breakdown.</p></div></div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', marginTop: '0.5rem' }}>
+                {revenueMetrics.map((m, i) => (
+                  <div key={i}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                      <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>{m.label}</span>
+                      <strong style={{ fontSize: 'var(--text-sm)' }}>{m.value}</strong>
+                    </div>
+                    <div className="admin-bar">
+                      <span style={{ width: `${Math.min(m.pct || 0, 100)}%` }} />
+                    </div>
                   </div>
                 ))}
               </div>
             </aside>
           </section>
 
-          {/* Bottom grid */}
-          <section className="admin-bottom-grid">
-            <article className="admin-card admin-panel">
-              <div className="admin-section-head"><div><h3>Revenue intelligence</h3><p>Collection quality, not just totals.</p></div></div>
-              <div className="admin-metric-cluster">
-                {revenueMetrics.map((m, i) => (
-                  <div key={i} className="admin-metric-card">
-                    <small>{m.label}</small>
-                    <strong>{m.value}</strong>
-                    <div className="admin-bar"><span style={{ width: `${Math.min(m.pct, 100)}%` }}></span></div>
+          <section className="admin-content-grid">
+            <article className="admin-card">
+              <div className="admin-section-head"><div><h3>Work lanes</h3><p>Active files by stage.</p></div></div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginTop: '0.5rem' }}>
+                {[{ title: 'Field', items: workLanes.field }, { title: 'Design', items: workLanes.design }, { title: 'Close', items: workLanes.close }].map((lane) => (
+                  <div key={lane.title}>
+                    <p style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>{lane.title}</p>
+                    {lane.items.length === 0 && <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)' }}>Empty</p>}
+                    {lane.items.map(item => <AdminKanbanCard key={item.id} {...item} />)}
                   </div>
                 ))}
               </div>
             </article>
 
-            <article className="admin-card admin-panel">
-              <div className="admin-section-head"><div><h3>Work lanes</h3><p>Each lane reflects a real operational handoff.</p></div></div>
-              <div className="admin-kanban">
-                <AdminKanbanCard title="Needs field action" items={workLanes.field} />
-                <AdminKanbanCard title="In design desk" items={workLanes.design} />
-                <AdminKanbanCard title="Ready to close" items={workLanes.close} />
+            <aside className="admin-card admin-panel">
+              <div className="admin-section-head"><div><h3>Activity timeline</h3><p>What needs attention today.</p></div></div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem', marginTop: '0.5rem' }}>
+                {timeline.map((t, i) => (
+                  <div key={i} style={{ borderLeft: '2px solid var(--color-border)', paddingLeft: '0.85rem' }}>
+                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{t.time}</span>
+                    <p style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--color-text)', margin: '0.2rem 0 0.15rem' }}>{t.title}</p>
+                    <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>{t.body}</p>
+                  </div>
+                ))}
               </div>
-            </article>
+            </aside>
           </section>
 
         </main>
